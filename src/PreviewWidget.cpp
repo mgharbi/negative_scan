@@ -1,3 +1,4 @@
+#include <QtMath>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QImage>
@@ -18,6 +19,11 @@ PreviewWidget::PreviewWidget(QWidget *parent)
   QHBoxLayout *layout = new QHBoxLayout;
 
   setLayout(layout);
+
+  projection.setToIdentity();
+  translation.setToIdentity();
+  scale = 1.0f;
+  // scale.setToIdentity();
 
   // asks for a OpenGL 3.2 debug context using the Core profile
   // QSurfaceFormat format;
@@ -65,8 +71,6 @@ void PreviewWidget::initializeGL() {
   QMatrix4x4 m;
   m.setToIdentity();
   program->setUniformValue(m_projLoc, m);
-  // m.ortho(-1.0f, +1.0f, +1.0f, -1.0f, 0.0f, 2.0f);
-  // m.rotate(-90, 0.0f, 0.0f, 1.0f);
 
   GLenum glErr = GL_NO_ERROR;
   while((glErr = glGetError()) != GL_NO_ERROR) {
@@ -74,19 +78,19 @@ void PreviewWidget::initializeGL() {
   }
 
   // Rectangle vertices
-  static const GLfloat rectangle_vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-    0.5f, -0.5f,  0.0f,
-    0.5f,  0.5f,  0.0f,
-    -0.5f,  0.5f, 0.0f,
-  };
-
   // static const GLfloat rectangle_vertices[] = {
-  //   -1.0f, -1.0f, 0.0f,
-  //   1.0f, -1.0f,  0.0f,
-  //   1.0f,  1.0f,  0.0f,
-  //   -1.0f,  1.0f, 0.0f,
+  //   -0.5f, -0.5f, 0.0f,
+  //   0.5f, -0.5f,  0.0f,
+  //   0.5f,  0.5f,  0.0f,
+  //   -0.5f,  0.5f, 0.0f,
   // };
+
+  static const GLfloat rectangle_vertices[] = {
+    -1.0f, -1.0f, 0.0f,
+    1.0f, -1.0f,  0.0f,
+    1.0f,  1.0f,  0.0f,
+    -1.0f,  1.0f, 0.0f,
+  };
 
   static const GLfloat tex_coords[] = { 0.0f, 0.0f, 
                                         1.0f, 0.0f,
@@ -140,14 +144,16 @@ void PreviewWidget::paintGL()
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
 
-
   program->bind();
 
-  QMatrix4x4 m;
-  m.setToIdentity();
-  m.translate(0, 0, -1);  // Translate scene in camera's fulcrum
+  QMatrix4x4 model;
+  model.setToIdentity();
+  model.translate(0, 0, -1);  // Translate scene in camera's fulcrum
 
-  program->setUniformValue(m_projLoc, projection*m);
+  QMatrix4x4 scale_mtx;
+  scale_mtx.scale(scale, scale, 0);
+
+  program->setUniformValue(m_projLoc, translation*scale_mtx*projection*model);
 
   QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
   if (texture) {
@@ -173,9 +179,14 @@ void PreviewWidget::resizeGL(int w, int h)
   // Reset projection
   projection.setToIdentity();
 
+  qreal height = 2.0;
+  qreal width = height * aspect;
+
   // Set perspective projection
   const qreal zNear = 0.1, zFar = 3.0, fov = 45.0;
-  projection.perspective(fov, aspect, zNear, zFar);
+  projection.ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 10.0f);
+  // projection.perspective(fov, aspect, zNear, zFar);
+  projection.rotate(-90, 0.0f, 0.0f, 1.0f);
 }
 
 void PreviewWidget::controlDataChanged(ControlData cdata) {
@@ -256,4 +267,37 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
   update();
 
   // // program->release();
+}
+
+void PreviewWidget::mousePressEvent(QMouseEvent *e) {
+  mousePreviousPosition = QVector2D(e->localPos());
+}
+
+void PreviewWidget::mouseMoveEvent(QMouseEvent *e) {
+  QVector2D diff = QVector2D(e->localPos()) - mousePreviousPosition;
+  mousePreviousPosition = QVector2D(e->localPos());
+
+  diff.setY(-diff.y());
+  
+  diff /= QVector2D(size().width(), size().height());
+
+  translation.translate(diff);
+  update();
+}
+
+void PreviewWidget::mouseReleaseEvent(QMouseEvent *e) {
+}
+
+void PreviewWidget::mouseDoubleClickEvent(QMouseEvent *e) {
+  translation.setToIdentity();
+  scale = 1.0f;
+  update();
+}
+
+void PreviewWidget::wheelEvent(QWheelEvent *e) {
+  // bounded scaling
+  scale *= qPow(1.001, e->angleDelta().y());
+  scale = qMin(scale, 10.0f);
+  scale = qMax(scale, 1.0f);
+  update();
 }

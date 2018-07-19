@@ -1,11 +1,15 @@
 #pragma once
 
+#include <QtGlobal>
 #include <QWidget>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QMatrix4x4>
+#include <QVector2D>
+#include <QMouseEvent>
+#include <QWheelEvent>
 
 #include "ControlData.h"
 
@@ -20,6 +24,12 @@ class PreviewWidget : public QOpenGLWidget, protected QOpenGLFunctions
 public:
   PreviewWidget(QWidget *parent=nullptr);
   // virtual ~PreviewWidget ();
+  //
+  void mousePressEvent(QMouseEvent *e);
+  void mouseMoveEvent(QMouseEvent *e);
+  void mouseDoubleClickEvent(QMouseEvent *e);
+  void mouseReleaseEvent(QMouseEvent *e);
+  void wheelEvent(QWheelEvent *e);
   
 public slots:
   void controlDataChanged(ControlData cdata);
@@ -39,6 +49,10 @@ private:
   int m_outGammaLoc;
 
   QMatrix4x4 projection;
+  QMatrix4x4 translation;
+  float scale;
+
+  QVector2D mousePreviousPosition;
 
 protected:
   void initializeGL();

@@ -18,39 +18,18 @@ PreviewWidget::PreviewWidget(QWidget *parent)
   setLayout(layout);
 }
 
+// PreviewWidget::~PreviewWidget () {
+// }
+
 void PreviewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
   qDebug() << "OpenGL " << context()->format().majorVersion() << "."
            << context()->format().minorVersion();
 
-  const char *vsrc =
-    "attribute vec3 vertex;\n"
-    "attribute vec2 vert_texcoord;\n"
-    "varying vec2 screen_pos;\n"
-    "varying vec2 texcoord;\n"
-    "void main() {\n"
-    "   gl_Position.xyz = vertex;\n"
-    "   gl_Position.w = 1.0;\n"
-    "   texcoord = vert_texcoord;\n"
-    "   screen_pos = 0.5*(vertex.xy + 1.0);\n"
-    "}\n";
-
-  const char *fsrc =
-    "varying vec2 screen_pos;\n"
-    "varying vec2 texcoord;\n"
-    "uniform sampler2D texture;\n"
-    "uniform vec3 gamma;\n"
-    "uniform vec3 white_point;\n"
-    "void main() {\n"
-    " //  gl_FragColor = vec4(texcoord, 1.0, 1.0);\n"
-    "   gl_FragColor = texture2D(texture, texcoord);\n"
-    " //  gl_FragColor = vec4(gamma*vec3(screen_pos.x), 1.0);\n"
-    "}\n";
-
   program = new QOpenGLShaderProgram;
-  program->addShaderFromSourceCode(QOpenGLShader::Vertex, vsrc);
-  program->addShaderFromSourceCode(QOpenGLShader::Fragment, fsrc);
+  program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":preview.vert");
+  program->addShaderFromSourceFile(QOpenGLShader::Fragment, ":preview.frag");
   program->bindAttributeLocation("vertex", 0);
   program->bindAttributeLocation("texcoord", 1);
   program->link();
@@ -92,7 +71,7 @@ void PreviewWidget::initializeGL() {
 
   texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
   QImage img(512, 512, QImage::Format_RGB888);
-  img.fill(QColor::fromRgb(255, 0, 0));
+  img.fill(QColor::fromRgb(255, 128, 128));
   texture->setData(img);
 }
 
@@ -136,4 +115,12 @@ void PreviewWidget::resizeGL(int width, int height)
   // TODO(mgharbi): click+hold to drag, wheel to zoom, preserve aspect ratio, camera matrix transform
   // TODO(mgharbi): sliders to adjust image properties
   qDebug() << "resizing " << width << " " << height;
+}
+
+void PreviewWidget::gammaChanged(int idx, float value) {
+  qDebug() << "received gamma change signal" << idx << "val" << value;
+  program->bind();
+  program->setUniformValue(m_gammaLoc, QVector3D(0, value, 0));
+  program->release();
+  update();
 }

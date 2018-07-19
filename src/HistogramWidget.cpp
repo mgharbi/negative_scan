@@ -91,6 +91,7 @@ float HistogramWidget::set_white_pos(int x) {
   if(white_line) {
     white_line->setLine(x, 0, x, h);
   }
+  return 0.0f;
 }
 
 void HistogramWidget::sceneRectChanged(const QRectF &rect) {

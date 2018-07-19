@@ -12,9 +12,15 @@ QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram);
 
 class PreviewWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
+
+  Q_OBJECT
+
 public:
   PreviewWidget(QWidget *parent=nullptr);
   // virtual ~PreviewWidget ();
+  
+public slots:
+  void gammaChanged(int idx, float value);
 
 private:
   QOpenGLTexture *texture;

@@ -7,9 +7,21 @@ MainWindow::MainWindow() {
   resize(QDesktopWidget().availableGeometry(this).size() * 0.7);
 
   // raw_processor = new RawProcessor();
+  //
 
-  preview = new PreviewWidget();
+  preview = new PreviewWidget(this);
   setCentralWidget(preview);
+
+  QDockWidget *dock = new QDockWidget("controls", this);
+  controls = new ControlsWidget(dock);
+  // controls->connect_controls(preview);
+  dock->setWidget(controls);
+  addDockWidget(Qt::RightDockWidgetArea, dock);
+
+  QObject::connect(controls, 
+      &ControlsWidget::setGamma,
+      preview,
+      &PreviewWidget::gammaChanged);
   
   // histogram = new HistogramWidget();
   // setCentralWidget(histogram);
@@ -18,7 +30,6 @@ MainWindow::MainWindow() {
   // tools->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   // tools->setWidget(histogram);
 
-  // addDockWidget(Qt::RightDockWidgetArea, tools);
   setWindowTitle("Negative Scan");
 }
 

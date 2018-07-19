@@ -5,7 +5,7 @@
 #include <QSlider>
 #include <QPushButton>
 
-#include "PreviewWidget.h"
+#include "ControlData.h"
 
 class ControlsWidget : public QWidget
 {
@@ -24,7 +24,14 @@ signals:
   void loadImage();
 
 private:
-  float encodeSliderValue(int val);
+  ControlData data;
+
+  // UI
+  QLabel *wb_header_label;
+  QSlider *wb_sliders[3];
+  QLabel *wb_labels[3];
+
+  QLabel *gamma_header_label;
   QSlider *gamma_sliders[3];
   QLabel *gamma_labels[3];
   QPushButton *load_button;

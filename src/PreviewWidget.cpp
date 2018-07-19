@@ -6,19 +6,19 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLDebugLogger>
 #include <QOpenGLTexture>
-// #include <QSurfaceFormat>
 #include <QVector>
 #include <QVector3D>
 #include <QtDebug>
+#include <QPainter>
 
 #include "PreviewWidget.h"
 
 PreviewWidget::PreviewWidget(QWidget *parent)
   : QOpenGLWidget(parent){
 
-  QHBoxLayout *layout = new QHBoxLayout;
+  QHBoxLayout *layout = new QHBoxLayout(this);
 
-  setLayout(layout);
+  // setLayout(layout);
 
   rotate_button = new QPushButton("rotate", this);
   // layout->addWidget(load_button);
@@ -31,18 +31,18 @@ PreviewWidget::PreviewWidget(QWidget *parent)
   image_ratio.setToIdentity();
   rotation.setToIdentity();
   scale = 1.0f;
-
-  // asks for a OpenGL 3.2 debug context using the Core profile
-  // QSurfaceFormat format;
-  // format.setMajorVersion(3);
-  // format.setMinorVersion(2);
-  // format.setProfile(QSurfaceFormat::CoreProfile);
-  // format.setOption(QSurfaceFormat::DebugContext);
-  // setFormat(format);
 }
 
-// PreviewWidget::~PreviewWidget () {
-// }
+PreviewWidget::~PreviewWidget () {
+  if(texture) {
+    delete texture;
+    texture = nullptr;
+  }
+  if(program) {
+    delete program;
+    program = nullptr;
+  }
+}
 
 void PreviewWidget::initializeGL() {
   initializeOpenGLFunctions();
@@ -135,13 +135,6 @@ void PreviewWidget::setupVertexAttribs()
 
 void PreviewWidget::paintGL()
 {
-  glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
-
-  program->bind();
-
   QMatrix4x4 model;
   model.setToIdentity();
   model.translate(0, 0, -1);  // Translate scene in camera's fulcrum
@@ -149,18 +142,49 @@ void PreviewWidget::paintGL()
   QMatrix4x4 scale_mtx;
   scale_mtx.scale(scale, scale, 0);
 
-  program->setUniformValue(m_projLoc, translation*scale_mtx*projection*model*image_ratio*rotation);
 
-  QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
+  QPainter p(this);
+
+  p.beginNativePainting();
+
+  glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  // glEnable(GL_DEPTH_TEST);
+  // glEnable(GL_CULL_FACE);
+
+  program->bind();
+
+  program->setUniformValue(m_projLoc, projection*translation*scale_mtx*rotation*model*image_ratio);
+
   if (texture) {
-    texture-> bind();
+    QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
+    texture->bind();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     texture->release();
+    vaoBinder.release();
   } else {
     qDebug() << "no texture available";
   }
   program->release();
 
+  GLenum glErr = GL_NO_ERROR;
+  while((glErr = glGetError()) != GL_NO_ERROR) {
+    qDebug("ERROR Painting Opengl");
+  }
+
+  p.endNativePainting();
+
+  QString s("gamma: ");
+  p.drawText(QPointF(100.5, 100.5), s+display_gamma);
+
+  // Draw the crop region
+  // QRect r(10, 10, 100, 100);
+  // QPen pen = p.pen();
+  // pen.setStyle(Qt::DotLine);
+  // p.setPen(pen);
+  // p.drawRect(r);
+
+  p.end();
 }
 
 void PreviewWidget::resizeGL(int w, int h)
@@ -193,6 +217,9 @@ void PreviewWidget::controlDataChanged(ControlData cdata) {
   program->setUniformValue(m_grayscaleLoc, cdata.grayscale);
   program->setUniformValue(m_invertLoc, cdata.invert);
   program->release();
+
+  display_gamma.setNum(cdata.output_gamma, 'f', 4);
+
   update();
 }
 
@@ -218,7 +245,6 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
   texture->setFormat(texFormat);
   texture->allocateStorage();
   texture->setData(pixFormat, pixType, (void*) imdata);
-
   
   GLenum glErr = GL_NO_ERROR;
   while((glErr = glGetError()) != GL_NO_ERROR) {
@@ -263,7 +289,6 @@ void PreviewWidget::mouseDoubleClickEvent(QMouseEvent *e) {
 }
 
 void PreviewWidget::rotate_camera() {
-  qDebug() << "rotate";
   rotation.rotate(-90, 0.0f, 0.0f, 1.0f);
   update();
 }

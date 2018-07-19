@@ -10,7 +10,7 @@ uniform bool invert;
 
 void main() {
   float eps = 1e-4;
-  vec3 negative = texture2D(texture, texcoord).xyz / 0.5;
+  vec3 negative = 2.0*texture2D(texture, texcoord).xyz;
   vec3 wp_corrected = (negative + eps) / white_point;
 
   vec3 gamma_corrected;
@@ -19,7 +19,7 @@ void main() {
     vec3 levels = clamp(exposure*(positive - black_point), vec3(0.0), vec3(1.0));
     gamma_corrected = pow(levels, vec3(1.0 / output_gamma));
   } else {
-    gamma_corrected = pow(wp_corrected, vec3(1.0 / output_gamma));
+    gamma_corrected = pow(exposure*(wp_corrected - black_point), vec3(1.0 / output_gamma));
   }
 
 

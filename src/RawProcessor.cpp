@@ -8,7 +8,7 @@ void RawProcessor::load() {
   iProcessor.imgdata.params.half_size = true;
 
   // rotate
-  iProcessor.imgdata.params.user_flip = 3;
+  // iProcessor.imgdata.params.user_flip = 3;
 
   iProcessor.imgdata.params.gamm[0] = 1.0;
   iProcessor.imgdata.params.gamm[1] = 1.0;
@@ -32,7 +32,7 @@ void RawProcessor::load() {
   qDebug() << "tone curve" << iProcessor.imgdata.params.gamm[0]
                            << iProcessor.imgdata.params.gamm[1];
 
-  iProcessor.open_file("../data/silvia.dng");
+  iProcessor.open_file("../data/pond.CR2");
   // iProcessor.open_file("../data/FilmScans20180451.CR2");
   iProcessor.unpack();
   iProcessor.dcraw_process();
@@ -62,6 +62,7 @@ void RawProcessor::load() {
   unsigned short* ds_data = new unsigned short[w2*h2*3];
 
   qDebug() << "subsample and convert uint16";
+  unsigned short maxi = 0;
   for (int y = 0; y < h2; ++y)
   for (int x = 0; x < w2; ++x)
   {
@@ -70,12 +71,10 @@ void RawProcessor::load() {
     ds_data[idx_ds + 0] = data[idx + 0];
     ds_data[idx_ds + 1] = data[idx + 1];
     ds_data[idx_ds + 2] = data[idx + 2];
-    
+    maxi = std::max(maxi, data[idx + 0]);
   }
-  qDebug() << "subsample done";
+  qDebug() << "subsample done, max val" <<  maxi;
   LibRaw::dcraw_clear_mem(processed);
-
-  // qDebug() << "image type" << iProcessor.imgdata.type;
 
   qDebug() << "post processed image" << w << "x" << h;
 
@@ -84,9 +83,13 @@ void RawProcessor::load() {
 
   // TODO: HalideProcessor
   // TODO: Save to Disk
-  // TODO: Batch process
   // TODO: BlackAndWhite switch
   // TODO: Pipette-style black pt / wp
+  // TODO: Presets
+  // TODO: Save state
+  // TODO: multiple images
+  // TODO: crop
+  // TODO: Batch process
   //
   // printf("Raw 0 %d\n", raw[1]);
 //   iProcessor.imgdata.filter;

@@ -24,8 +24,8 @@ class PreviewWidget : public QOpenGLWidget, protected QOpenGLFunctions
 
 public:
   PreviewWidget(QWidget *parent=nullptr);
-  // virtual ~PreviewWidget ();
-  //
+  virtual ~PreviewWidget ();
+
   void mousePressEvent(QMouseEvent *e);
   void mouseMoveEvent(QMouseEvent *e);
   void mouseDoubleClickEvent(QMouseEvent *e);
@@ -51,15 +51,18 @@ private:
   int m_grayscaleLoc;
   int m_invertLoc;
 
+  // Camera transform
   QMatrix4x4 image_ratio;
   QMatrix4x4 projection;
   QMatrix4x4 translation;
   QMatrix4x4 rotation;
   float scale;
 
+  // UI interaction
   QVector2D mousePreviousPosition;
 
   QPushButton *rotate_button;
+  QString display_gamma;
 
   void rotate_camera();
 

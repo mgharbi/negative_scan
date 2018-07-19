@@ -1,10 +1,9 @@
 #pragma once
 
 #include <QWidget>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QLabel>
 #include <QSlider>
+#include <QPushButton>
 
 #include "PreviewWidget.h"
 
@@ -22,8 +21,11 @@ public:
 
 signals:
   void setGamma(int idx, float value);
+  void loadImage();
 
 private:
+  float encodeSliderValue(int val);
   QSlider *gamma_sliders[3];
   QLabel *gamma_labels[3];
+  QPushButton *load_button;
 };

@@ -12,6 +12,7 @@ public:
   RawProcessor();
   virtual ~RawProcessor ();
 
+public slots:
   void load();
 
 signals:

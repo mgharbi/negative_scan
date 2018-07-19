@@ -74,6 +74,8 @@ void PreviewWidget::initializeGL() {
   QImage img(512, 512, QImage::Format_RGB888);
   img.fill(QColor::fromRgb(255, 128, 128));
   texture->setData(img);
+
+  qDebug() << "GL initialized" << context();
 }
 
 void PreviewWidget::setupVertexAttribs()
@@ -114,11 +116,11 @@ void PreviewWidget::resizeGL(int width, int height)
 {
   // TODO(mgharbi): click+hold to drag, wheel to zoom, preserve aspect ratio, camera matrix transform
   // TODO(mgharbi): sliders to adjust image properties
-  qDebug() << "resizing " << width << " " << height;
+  // qDebug() << "resizing " << width << " " << height;
 }
 
 void PreviewWidget::gammaChanged(int idx, float value) {
-  qDebug() << "received gamma change signal" << idx << "val" << value;
+  // qDebug() << "received gamma change signal" << idx << "val" << value;
   program->bind();
   program->setUniformValue(m_gammaLoc, QVector3D(0, value, 0));
   program->release();
@@ -126,26 +128,34 @@ void PreviewWidget::gammaChanged(int idx, float value) {
 }
 
 void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsigned long h) {
+  if (!context()) {
+    return;
+    // qDebug() << "context not yet initialized";
+  }
+  qDebug() << "Image changed" << context();
   // // TODO : assert / wait for opengl
   // // if (!program) {
   // //   qDebug() << "no available program, aborting";
   // // }
   //
-  // // qDebug() << "image has changed" << w << "x" << h << "pixels";
-  // // qDebug() << "program is" << program;
-  // makeCurrent();
+  qDebug() << "image has changed" << w << "x" << h << "pixels";
+  qDebug() << "program is" << program;
+  makeCurrent();
   // qDebug() << "prebound prog";
   // program->bind();
   // qDebug() << "bound prog";
-  // if (texture) {
-  //   delete texture;
-  //   texture = nullptr;
-  // }
-  // QImage img(512, 512, QImage::Format_RGB888);
-  // texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-  // img.fill(QColor::fromRgb(255, 128, 128));
-  // texture->setData(img);
-  // doneCurrent();
-  //
+  if (texture) {
+    qDebug() << "Deleting old texture";
+    delete texture;
+    texture = nullptr;
+  }
+  qDebug() << "Setting new texture";
+  QImage img(512, 512, QImage::Format_RGB888);
+  texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+  img.fill(QColor::fromRgb(128, 128, 255));
+  texture->setData(img);
+  doneCurrent();
+  update();
+
   // // program->release();
 }

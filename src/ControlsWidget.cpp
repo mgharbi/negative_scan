@@ -1,5 +1,8 @@
 #include "ControlsWidget.h"
 #include <QDebug>
+#include <QtMath>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
 
 ControlsWidget::ControlsWidget(QWidget *parent)
   : QWidget(parent)
@@ -29,15 +32,24 @@ ControlsWidget::ControlsWidget(QWidget *parent)
     s->setValue(-1);
     s->setValue(0);
   }
-
+  load_button = new QPushButton("load", this);
+  layout->addWidget(load_button);
+  QObject::connect(
+      load_button, &QPushButton::clicked, 
+      this, &ControlsWidget::loadImage);
 }
 
 void ControlsWidget::sliderChanged(int idx, int val) {
   QString s;
-  s.setNum(val);
+  float value = encodeSliderValue(val);
+  s.setNum(value, 'g', 2);
   gamma_labels[idx]->setText(s);
-  emit setGamma(idx, val);
+  emit setGamma(idx, value);
 }
 
 ControlsWidget::~ControlsWidget() {
+}
+
+float ControlsWidget::encodeSliderValue(int val) {
+  return qExp(val*0.1f);
 }

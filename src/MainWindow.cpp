@@ -27,7 +27,13 @@ MainWindow::MainWindow() {
       preview,
       &PreviewWidget::imageChanged);
 
-  raw_processor->load();
+  QObject::connect(
+      controls,
+      &ControlsWidget::loadImage,
+      raw_processor, 
+      &RawProcessor::load);
+
+  // raw_processor->load();
   
   // histogram = new HistogramWidget();
   // setCentralWidget(histogram);

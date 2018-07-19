@@ -120,21 +120,21 @@ void ControlsWidget::sliderChanged(int idx, int val) {
     value = val*1.0f/wp_steps;
     // value = val*1.0f/((1<<16) - 1);
     data.wp[idx] = value;
-    s.setNum(value, 'g', 2);
+    s.setNum(value, 'f', 4);
     wp_labels[idx]->setText(s);
   } else if ( idx < 6 ){ // gamma
-    value = qPow(2.0f, val*1.0f/gamma_steps);
+    value = qPow(2.0f, val*2.0f/gamma_steps);
     data.gamma[idx - 3] = value;
-    s.setNum(value, 'g', 2);
+    s.setNum(value, 'f', 4);
     gamma_labels[idx - 3]->setText(s);
   } else if (idx == 6){ // exposure
-    value = qPow(2.0f, val*1.0f/1000);
+    value = qPow(2.0f, val*2.0f/1000);
     data.exposure = value;
   } else if (idx == 7){ // black point
     value = val*1.0f/1000;
     data.bp = value;
   } else if (idx == 8){ // gamma
-    value = qPow(2.0f, val*1.0f/gamma_steps);
+    value = qPow(2.0f, val*2.0f/gamma_steps);
     data.output_gamma = value;
   }
   emit updateControlData(data);

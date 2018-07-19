@@ -13,14 +13,17 @@ void RawProcessor::load() {
   iProcessor.imgdata.params.gamm[0] = 1.0;
   iProcessor.imgdata.params.gamm[1] = 1.0;
 
-  iProcessor.imgdata.params.cropbox[0] = 500;
-  iProcessor.imgdata.params.cropbox[1] = 500;
-  iProcessor.imgdata.params.cropbox[2] = 4000;
-  iProcessor.imgdata.params.cropbox[3] = 4000;
+  // iProcessor.imgdata.params.cropbox[0] = 200;
+  // iProcessor.imgdata.params.cropbox[1] = 200;
+  // iProcessor.imgdata.params.cropbox[2] = 4000;
+  // iProcessor.imgdata.params.cropbox[3] = 4000;
 
   iProcessor.imgdata.params.output_bps = 16;
   iProcessor.imgdata.params.no_auto_bright = true;
   iProcessor.imgdata.params.output_color = 0;  // raw space
+
+  // iProcessor.imgdata.params.use_camera_wb = true;
+  iProcessor.imgdata.params.use_camera_matrix = true;
 
   qDebug() << "use camera wb" << iProcessor.imgdata.params.use_camera_wb;
   qDebug() << "use auto wb" << iProcessor.imgdata.params.use_auto_wb;
@@ -29,7 +32,8 @@ void RawProcessor::load() {
   qDebug() << "tone curve" << iProcessor.imgdata.params.gamm[0]
                            << iProcessor.imgdata.params.gamm[1];
 
-  iProcessor.open_file("../data/FilmScans20180451.CR2");
+  iProcessor.open_file("../data/silvia.dng");
+  // iProcessor.open_file("../data/FilmScans20180451.CR2");
   iProcessor.unpack();
   iProcessor.dcraw_process();
 

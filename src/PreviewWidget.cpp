@@ -54,6 +54,7 @@ void PreviewWidget::initializeGL() {
   m_exposureLoc = program->uniformLocation("exposure");
   m_bpLoc = program->uniformLocation("black_point");
   m_outGammaLoc = program->uniformLocation("output_gamma");
+  m_projLoc = program->uniformLocation("proj_mtx");
 
   program->setUniformValue(m_gammaLoc, QVector3D(1, 1, 1));
   program->setUniformValue(m_wpLoc, QVector3D(1, 1, 1));
@@ -61,13 +62,31 @@ void PreviewWidget::initializeGL() {
   program->setUniformValue(m_bpLoc, 0.0f);
   program->setUniformValue(m_outGammaLoc, 1.0f);
 
+  QMatrix4x4 m;
+  m.setToIdentity();
+  program->setUniformValue(m_projLoc, m);
+  // m.ortho(-1.0f, +1.0f, +1.0f, -1.0f, 0.0f, 2.0f);
+  // m.rotate(-90, 0.0f, 0.0f, 1.0f);
+
+  GLenum glErr = GL_NO_ERROR;
+  while((glErr = glGetError()) != GL_NO_ERROR) {
+    qDebug("ERROR Setting proj");
+  }
+
   // Rectangle vertices
   static const GLfloat rectangle_vertices[] = {
-    -1.0f, -1.0f, 0.0f,
-    1.0f, -1.0f, 0.0f,
-    1.0f,  1.0f, 0.0f,
-    -1.0f,  1.0f, 0.0f,
+    -0.5f, -0.5f, 0.0f,
+    0.5f, -0.5f,  0.0f,
+    0.5f,  0.5f,  0.0f,
+    -0.5f,  0.5f, 0.0f,
   };
+
+  // static const GLfloat rectangle_vertices[] = {
+  //   -1.0f, -1.0f, 0.0f,
+  //   1.0f, -1.0f,  0.0f,
+  //   1.0f,  1.0f,  0.0f,
+  //   -1.0f,  1.0f, 0.0f,
+  // };
 
   static const GLfloat tex_coords[] = { 0.0f, 0.0f, 
                                         1.0f, 0.0f,
@@ -122,10 +141,15 @@ void PreviewWidget::paintGL()
   glEnable(GL_CULL_FACE);
 
 
-  QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
-  // qDebug() << "paint with texture" << texture->textureId();
-  // program->setUniformValue("texture", texture->textureId());
   program->bind();
+
+  QMatrix4x4 m;
+  m.setToIdentity();
+  m.translate(0, 0, -1);  // Translate scene in camera's fulcrum
+
+  program->setUniformValue(m_projLoc, projection*m);
+
+  QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
   if (texture) {
     texture-> bind();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -135,16 +159,23 @@ void PreviewWidget::paintGL()
   }
   program->release();
 
-  // QMatrix4x4 m;
-  // m.ortho(-2.0f, +2.0f, +2.0f, -2.0f, 0.01f, 2.0f);
-  // program->setUniformValue("matrix", m);
 }
 
-void PreviewWidget::resizeGL(int width, int height)
+void PreviewWidget::resizeGL(int w, int h)
 {
   // TODO(mgharbi): click+hold to drag, wheel to zoom, preserve aspect ratio, camera matrix transform
   // TODO(mgharbi): sliders to adjust image properties
   // qDebug() << "resizing " << width << " " << height;
+
+  // Calculate aspect ratio
+  qreal aspect = qreal(w) / qreal(h ? h : 1);
+
+  // Reset projection
+  projection.setToIdentity();
+
+  // Set perspective projection
+  const qreal zNear = 0.1, zFar = 3.0, fov = 45.0;
+  projection.perspective(fov, aspect, zNear, zFar);
 }
 
 void PreviewWidget::controlDataChanged(ControlData cdata) {

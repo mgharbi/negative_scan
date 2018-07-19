@@ -5,6 +5,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
+#include <QMatrix4x4>
 
 #include "ControlData.h"
 
@@ -30,11 +31,14 @@ private:
   QOpenGLVertexArrayObject m_vao;
   QOpenGLBuffer m_vert_pos_vbo;
   QOpenGLBuffer m_tex_coord_vbo;
+  int m_projLoc;
   int m_gammaLoc;
   int m_wpLoc;
   int m_exposureLoc;
   int m_bpLoc;
   int m_outGammaLoc;
+
+  QMatrix4x4 projection;
 
 protected:
   void initializeGL();

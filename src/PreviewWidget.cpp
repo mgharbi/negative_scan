@@ -1,8 +1,11 @@
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QImage>
+#include <QColor>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
 #include <QVector>
+#include <QVector3D>
 #include <QtDebug>
 
 #include "PreviewWidget.h"
@@ -21,37 +24,44 @@ void PreviewWidget::initializeGL() {
   qDebug() << "OpenGL " << context()->format().majorVersion() << "."
            << context()->format().minorVersion();
 
-  // QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
   const char *vsrc =
     "attribute vec3 vertex;\n"
+    "attribute vec2 vert_texcoord;\n"
     "varying vec2 screen_pos;\n"
+    "varying vec2 texcoord;\n"
     "void main() {\n"
     "   gl_Position.xyz = vertex;\n"
     "   gl_Position.w = 1.0;\n"
+    "   texcoord = vert_texcoord;\n"
     "   screen_pos = 0.5*(vertex.xy + 1.0);\n"
     "}\n";
-  // vshader->compileSourceCode(vsrc);
 
-  // QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
   const char *fsrc =
     "varying vec2 screen_pos;\n"
+    "varying vec2 texcoord;\n"
+    "uniform sampler2D texture;\n"
+    "uniform vec3 gamma;\n"
+    "uniform vec3 white_point;\n"
     "void main() {\n"
-    "   gl_FragColor = vec4(screen_pos.x, 0.0, 0.0, 1.0);\n"
+    " //  gl_FragColor = vec4(texcoord, 1.0, 1.0);\n"
+    "   gl_FragColor = texture2D(texture, texcoord);\n"
+    " //  gl_FragColor = vec4(gamma*vec3(screen_pos.x), 1.0);\n"
     "}\n";
-  // fshader->compileSourceCode(fsrc);
 
   program = new QOpenGLShaderProgram;
-  // program->addShaderFromSourceFile(QOpenGLShader::Vertex, "/vshader.glsl");
-  // program->addShaderFromSourceCode(vshader);
   program->addShaderFromSourceCode(QOpenGLShader::Vertex, vsrc);
   program->addShaderFromSourceCode(QOpenGLShader::Fragment, fsrc);
-  // program->addShader(vshader);
   program->bindAttributeLocation("vertex", 0);
-  program->bindAttributeLocation("texCoord", 1);
+  program->bindAttributeLocation("texcoord", 1);
   program->link();
 
   program->bind();
-  // program->setUniformValue("texture", 0);
+  m_gammaLoc = program->uniformLocation("gamma");
+  m_wpLoc = program->uniformLocation("white_point");
+
+  program->setUniformValue("texture", 0);
+  program->setUniformValue(m_gammaLoc, QVector3D(0, 1, 0));
+  program->setUniformValue(m_wpLoc, QVector3D(0, 1, 0));
 
   // Rectangle vertices
   static const GLfloat rectangle_vertices[] = {
@@ -61,57 +71,44 @@ void PreviewWidget::initializeGL() {
     -1.0f,  1.0f, 0.0f,
   };
 
+  static const GLfloat tex_coords[] = { 0.0f, 0.0f, 
+                                        1.0f, 0.0f,
+                                        1.0f, 1.0f,
+                                        0.0f, 1.0f};
+
   m_vao.create();
   QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
-  m_rectangle_vbo.create();
-  m_rectangle_vbo.bind();
-  m_rectangle_vbo.allocate(rectangle_vertices, 4*3*sizeof(GLfloat));
+  m_vert_pos_vbo.create();
+  m_vert_pos_vbo.bind();
+  m_vert_pos_vbo.allocate(rectangle_vertices, 4*3*sizeof(GLfloat));
 
+  m_tex_coord_vbo.create();
+  m_tex_coord_vbo.bind();
+  m_tex_coord_vbo.allocate(tex_coords, 4*2*sizeof(GLfloat));
+  
   setupVertexAttribs();
 
   program->release();
 
-  // texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-  // texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt16);
-  // unsigned short im[32*32*3];
-  // for (int i = 0; i < 32*32*3; ++i) {
-  //   im[i] = 10;
-  // }
-  // texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16, (void*) im);
-  //
-  // QVector<GLfloat> vertData;
-  // const float coords[4*3] = { -1.0f,  1.0f,  1.0f, 
-  //                              1.0f,  1.0f,  1.0f,
-  //                              1.0f, -1.0f,  1.0f,
-  //                             -1.0f, -1.0f, 1.0f};
-  // const float tex_coords[4*2] = { 0.0f, 1.0f, 
-  //                                 1.0f, 1.0f,
-  //                                 1.0f, 0.0f,
-  //                                 0.0f, 0.0f};
-  //
-  // for (int i = 0; i < 4*3; ++i)
-  //   vertData.append(coords[i]);
-  // for (int i = 0; i < 4*2; ++i)
-  //   vertData.append(tex_coords[i]);
-  //
-  // vbo.create();
-  // vbo.bind();
-  // vbo.allocate(vertData.constData(), vertData.count()*sizeof(GLfloat));
-  //
-  // printf("GL inited\n");
+  texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+  QImage img(512, 512, QImage::Format_RGB888);
+  img.fill(QColor::fromRgb(255, 0, 0));
+  texture->setData(img);
 }
 
 void PreviewWidget::setupVertexAttribs()
 {
-    m_rectangle_vbo.bind();
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+
+    m_vert_pos_vbo.bind();
     f->glEnableVertexAttribArray(0);
     f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-    m_rectangle_vbo.release();
+    m_vert_pos_vbo.release();
 
-    // normals
-    // f->glEnableVertexAttribArray(1);
-    // f->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(3 * sizeof(GLfloat)));
+    m_tex_coord_vbo.bind();
+    f->glEnableVertexAttribArray(1);
+    f->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
+    m_tex_coord_vbo.release();
 }
 
 void PreviewWidget::paintGL()
@@ -123,6 +120,7 @@ void PreviewWidget::paintGL()
 
   QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
   program->bind();
+  texture-> bind();
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
   qDebug() << "paint";
@@ -131,46 +129,11 @@ void PreviewWidget::paintGL()
   // QMatrix4x4 m;
   // m.ortho(-2.0f, +2.0f, +2.0f, -2.0f, 0.01f, 2.0f);
   // program->setUniformValue("matrix", m);
-  // texture-> bind();
-
-
-  // GLuint vertexbuffer;
-  // glGenBuffers(1, &vertexbuffer);
-  // glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-  // glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-  //
-  // program->enableAttributeArray(0);
-  // glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-  // glVertexAttribPointer(
-  //     0,
-  //     3,
-  //     GL_FLOAT,
-  //     GL_FALSE,
-  //     0,
-  //     (void*)0
-  //     );
-  // glDrawArrays(GL_TRIANGLES, 0, 3);
-  // glDisableVertexAttribArray(0);
-
-  // program->enableAttributeArray(1);
-  // program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3*sizeof(GLfloat));
-  // program->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(GLfloat), 2, 4 * sizeof(GLfloat));
-  //
-  // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 void PreviewWidget::resizeGL(int width, int height)
 {
+  // TODO(mgharbi): click+hold to drag, wheel to zoom, preserve aspect ratio, camera matrix transform
+  // TODO(mgharbi): sliders to adjust image properties
   qDebug() << "resizing " << width << " " << height;
-}
-
-void PreviewWidget::draw()
-{
-//   glBegin(GL_QUADS);
-//   glNormal3f(0,0,-1);
-//   glVertex3f(-1,-1,0);
-//   glVertex3f(-1,1,0);
-//   glVertex3f(1,1,0);
-//   glVertex3f(1,-1,0);
-// glEnd();
 }

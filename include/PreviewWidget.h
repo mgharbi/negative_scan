@@ -19,15 +19,16 @@ public:
 private:
   QOpenGLTexture *texture;
   QOpenGLShaderProgram *program;
-  QOpenGLBuffer vbo;
   QOpenGLVertexArrayObject m_vao;
-  QOpenGLBuffer m_rectangle_vbo;
+  QOpenGLBuffer m_vert_pos_vbo;
+  QOpenGLBuffer m_tex_coord_vbo;
+  int m_gammaLoc;
+  int m_wpLoc;
 
 protected:
   void initializeGL();
   void paintGL();
   void resizeGL(int width, int height);
-  void draw();
   void setupVertexAttribs();
 
 };

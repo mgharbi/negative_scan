@@ -10,6 +10,7 @@
 #include <QVector2D>
 #include <QMouseEvent>
 #include <QWheelEvent>
+#include <QPushButton>
 
 #include "ControlData.h"
 
@@ -48,17 +49,22 @@ private:
   int m_bpLoc;
   int m_outGammaLoc;
 
+  QMatrix4x4 image_ratio;
   QMatrix4x4 projection;
   QMatrix4x4 translation;
+  QMatrix4x4 rotation;
   float scale;
 
   QVector2D mousePreviousPosition;
+
+  QPushButton *rotate_button;
+
+  void rotate_camera();
 
 protected:
   void initializeGL();
   void paintGL();
   void resizeGL(int width, int height);
   void setupVertexAttribs();
-  unsigned short *texture_data;
 
 };

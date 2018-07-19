@@ -20,10 +20,17 @@ PreviewWidget::PreviewWidget(QWidget *parent)
 
   setLayout(layout);
 
+  rotate_button = new QPushButton("rotate", this);
+  // layout->addWidget(load_button);
+  QObject::connect(
+      rotate_button, &QPushButton::clicked, 
+      this, &PreviewWidget::rotate_camera);
+
   projection.setToIdentity();
   translation.setToIdentity();
+  image_ratio.setToIdentity();
+  rotation.setToIdentity();
   scale = 1.0f;
-  // scale.setToIdentity();
 
   // asks for a OpenGL 3.2 debug context using the Core profile
   // QSurfaceFormat format;
@@ -38,13 +45,10 @@ PreviewWidget::PreviewWidget(QWidget *parent)
 // }
 
 void PreviewWidget::initializeGL() {
-  // context->create();
-
   initializeOpenGLFunctions();
 
   qDebug() << "OpenGL " << context()->format().majorVersion() << "."
            << context()->format().minorVersion();
-  // qDebug() << "has KHR ext?" << context()->hasExtension(QByteArrayLiteral("GL_KHR_debug"));
 
   program = new QOpenGLShaderProgram;
   program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":preview.vert");
@@ -77,14 +81,6 @@ void PreviewWidget::initializeGL() {
     qDebug("ERROR Setting proj");
   }
 
-  // Rectangle vertices
-  // static const GLfloat rectangle_vertices[] = {
-  //   -0.5f, -0.5f, 0.0f,
-  //   0.5f, -0.5f,  0.0f,
-  //   0.5f,  0.5f,  0.0f,
-  //   -0.5f,  0.5f, 0.0f,
-  // };
-
   static const GLfloat rectangle_vertices[] = {
     -1.0f, -1.0f, 0.0f,
     1.0f, -1.0f,  0.0f,
@@ -113,13 +109,9 @@ void PreviewWidget::initializeGL() {
 
   texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
 
-  QImage img(512, 512, QImage::Format_RGB888);
-  img.fill(QColor::fromRgb(255, 128, 128));
+  QImage img(1, 1, QImage::Format_RGB888);
+  img.fill(QColor::fromRgb(128, 128, 128));
   texture->setData(img);
-
-  qDebug() << "init texture id" << texture->textureId();
-
-  qDebug() << "GL initialized" << context();
 }
 
 void PreviewWidget::setupVertexAttribs()
@@ -153,7 +145,7 @@ void PreviewWidget::paintGL()
   QMatrix4x4 scale_mtx;
   scale_mtx.scale(scale, scale, 0);
 
-  program->setUniformValue(m_projLoc, translation*scale_mtx*projection*model);
+  program->setUniformValue(m_projLoc, translation*scale_mtx*projection*model*image_ratio*rotation);
 
   QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
   if (texture) {
@@ -169,10 +161,6 @@ void PreviewWidget::paintGL()
 
 void PreviewWidget::resizeGL(int w, int h)
 {
-  // TODO(mgharbi): click+hold to drag, wheel to zoom, preserve aspect ratio, camera matrix transform
-  // TODO(mgharbi): sliders to adjust image properties
-  // qDebug() << "resizing " << width << " " << height;
-
   // Calculate aspect ratio
   qreal aspect = qreal(w) / qreal(h ? h : 1);
 
@@ -185,18 +173,13 @@ void PreviewWidget::resizeGL(int w, int h)
   // Set perspective projection
   const qreal zNear = 0.1, zFar = 3.0, fov = 45.0;
   projection.ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 10.0f);
-  // projection.perspective(fov, aspect, zNear, zFar);
-  projection.rotate(-90, 0.0f, 0.0f, 1.0f);
 }
 
 void PreviewWidget::controlDataChanged(ControlData cdata) {
-  // qDebug() << "received cdata change signal" 
-  //   << cdata.wp[0] 
-  //   << cdata.wp[1] 
-  //   << cdata.wp[2] 
-  //   << cdata.gamma[0] 
-  //   << cdata.gamma[1] 
-  //   << cdata.gamma[2];
+  qDebug() << "update controls" 
+           << "exposure:" << cdata.exposure
+           << "output_gamma:" << cdata.output_gamma
+           ;
   program->bind();
   program->setUniformValue(m_gammaLoc, QVector3D(cdata.gamma[0], cdata.gamma[1], cdata.gamma[2]));
   program->setUniformValue(m_wpLoc, QVector3D(cdata.wp[0], cdata.wp[1], cdata.wp[2]));
@@ -212,37 +195,14 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
     return;
   }
 
-  // QOpenGLDebugLogger *logger = new QOpenGLDebugLogger(this);
-  // logger->initialize();
-  // qDebug() << "has KHR ext?" << context()->hasExtension(QByteArrayLiteral("GL_KHR_debug"));
-
-  qDebug() << "Image changed" << context();
-  qDebug() << "image has changed" << w << "x" << h << "pixels";
-  qDebug() << "program is" << program;
   makeCurrent();
   if (texture) {
     qDebug() << "Deleting old texture";
     delete texture;
     texture = nullptr;
   }
+
   qDebug() << "Setting new texture";
-
-  texture_data = new unsigned short[100*100*3];
-  for (int i = 0; i < 100*100*3; ++i) {
-    texture_data[i] = 1 << 15;
-  }
-  qDebug() << "imadata" << imdata[0] << imdata[10];
-  
-  // img.fill(QColor::fromRgb(255, 128, 128));
-
-  // texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-  // QImage img(512, 512, QImage::Format_RGB888);
-  // img.fill(QColor::fromRgb(128, 255, 128));
-  // QImage img(texture_data, 10, 10, QImage::Format_RGB888);
-  // QImage img(texture_data, 100, 100, QImage::Format_RGB888);
-  // qDebug() << "newImage" << img.width();
-  // texture->setData(img);
-  
   QOpenGLTexture::PixelType pixType = QOpenGLTexture::UInt16;
   QOpenGLTexture::PixelFormat pixFormat = QOpenGLTexture::RGB;
   QOpenGLTexture::TextureFormat texFormat = QOpenGLTexture::RGB16_UNorm;
@@ -250,23 +210,25 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
   texture->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
   texture->setSize(w, h);
   texture->setFormat(texFormat);
-  // texture->allocateStorage(pixFormat, pixType);
   texture->allocateStorage();
-  // texture->generateMipMaps();
   texture->setData(pixFormat, pixType, (void*) imdata);
+
   
   GLenum glErr = GL_NO_ERROR;
   while((glErr = glGetError()) != GL_NO_ERROR) {
     qDebug("ERROR LOADING TEXTURES");
   }
-  // texture->setFormat(QOpenGLTexture::RGB16U);
-  // texture->allocateStorage(QOpenGLTexture::RGB_Integer, QOpenGLTexture::UInt16);
-  // texture->setData(QOpenGLTexture::RGB_Integer, QOpenGLTexture::UInt16, imdata);
+
+  image_ratio.setToIdentity();
+  qreal aspect = w*1.0 / h;
+  if(aspect > 1.0) {
+    image_ratio.scale(1.0, 1.0/aspect);
+  } else {
+    image_ratio.scale(aspect, 1.0);
+  }
 
   doneCurrent();
   update();
-
-  // // program->release();
 }
 
 void PreviewWidget::mousePressEvent(QMouseEvent *e) {
@@ -294,10 +256,18 @@ void PreviewWidget::mouseDoubleClickEvent(QMouseEvent *e) {
   update();
 }
 
+void PreviewWidget::rotate_camera() {
+  qDebug() << "rotate";
+  rotation.rotate(-90, 0.0f, 0.0f, 1.0f);
+  update();
+}
+
 void PreviewWidget::wheelEvent(QWheelEvent *e) {
   // bounded scaling
   scale *= qPow(1.001, e->angleDelta().y());
   scale = qMin(scale, 10.0f);
-  scale = qMax(scale, 1.0f);
+  scale = qMax(scale, 0.2f);
   update();
+
+  // TODO: center zoom on mouse
 }

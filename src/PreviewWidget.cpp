@@ -190,7 +190,7 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
   QOpenGLTexture::TextureFormat texFormat = QOpenGLTexture::RGB16_UNorm;
   texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
   texture->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
-  texture->setSize(w, 10);
+  texture->setSize(w, h);
   texture->setFormat(texFormat);
   // texture->allocateStorage(pixFormat, pixType);
   texture->allocateStorage();

@@ -33,8 +33,6 @@ MainWindow::MainWindow() {
       raw_processor, 
       &RawProcessor::load);
 
-  // raw_processor->load();
-  
   // histogram = new HistogramWidget();
   // setCentralWidget(histogram);
 

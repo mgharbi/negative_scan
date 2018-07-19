@@ -64,6 +64,8 @@ void PreviewWidget::initializeGL() {
   m_exposureLoc = program->uniformLocation("exposure");
   m_bpLoc = program->uniformLocation("black_point");
   m_outGammaLoc = program->uniformLocation("output_gamma");
+  m_grayscaleLoc = program->uniformLocation("grayscale");
+  m_invertLoc = program->uniformLocation("invert");
   m_projLoc = program->uniformLocation("proj_mtx");
 
   program->setUniformValue(m_gammaLoc, QVector3D(1, 1, 1));
@@ -71,6 +73,8 @@ void PreviewWidget::initializeGL() {
   program->setUniformValue(m_exposureLoc, 1.0f);
   program->setUniformValue(m_bpLoc, 0.0f);
   program->setUniformValue(m_outGammaLoc, 1.0f);
+  program->setUniformValue(m_grayscaleLoc, false);
+  program->setUniformValue(m_invertLoc, true);
 
   QMatrix4x4 m;
   m.setToIdentity();
@@ -186,6 +190,8 @@ void PreviewWidget::controlDataChanged(ControlData cdata) {
   program->setUniformValue(m_exposureLoc, cdata.exposure);
   program->setUniformValue(m_bpLoc, cdata.bp);
   program->setUniformValue(m_outGammaLoc, cdata.output_gamma);
+  program->setUniformValue(m_grayscaleLoc, cdata.grayscale);
+  program->setUniformValue(m_invertLoc, cdata.invert);
   program->release();
   update();
 }

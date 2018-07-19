@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QSlider>
 #include <QPushButton>
+#include <QCheckBox>
 
 #include "ControlData.h"
 
@@ -18,6 +19,8 @@ public:
 
 public:
   void sliderChanged(int idx, int value);
+  void grayscaleToggle();
+  void invertToggle();
 
 signals:
   void updateControlData(ControlData data);
@@ -30,6 +33,9 @@ private:
   int gamma_steps;
 
   // UI
+  QCheckBox *grayscale_button;
+  QCheckBox *invert_button;
+
   QLabel *wp_header_label;
   QSlider *wp_sliders[3];
   QLabel *wp_labels[3];
@@ -37,9 +43,10 @@ private:
   QLabel *gamma_header_label;
   QSlider *gamma_sliders[3];
   QLabel *gamma_labels[3];
-  QPushButton *load_button;
 
   QSlider *exposure_slider;
   QSlider *out_gamma_slider;
   QSlider *bp_slider;
+
+  QPushButton *load_button;
 };

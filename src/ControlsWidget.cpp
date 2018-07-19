@@ -11,6 +11,19 @@ ControlsWidget::ControlsWidget(QWidget *parent)
   gamma_steps = 1000;
   QVBoxLayout *layout = new QVBoxLayout(this);
 
+  grayscale_button = new QCheckBox("b/w", this);
+  layout->addWidget(grayscale_button);
+  QObject::connect(
+      grayscale_button, &QCheckBox::toggled, 
+      this, &ControlsWidget::grayscaleToggle);
+
+  invert_button = new QCheckBox("invert", this);
+  layout->addWidget(invert_button);
+  QObject::connect(
+      invert_button, &QCheckBox::toggled, 
+      this, &ControlsWidget::invertToggle);
+  invert_button->toggle();
+
   QWidget *wp_widget = new QWidget();
   QVBoxLayout *wp_layout = new QVBoxLayout(wp_widget);
   wp_header_label = new QLabel("Negative White Point", this);
@@ -137,6 +150,17 @@ void ControlsWidget::sliderChanged(int idx, int val) {
     value = qPow(2.0f, val*2.0f/gamma_steps);
     data.output_gamma = value;
   }
+  emit updateControlData(data);
+}
+
+void ControlsWidget::grayscaleToggle() {
+  data.grayscale = !data.grayscale;
+  emit updateControlData(data);
+}
+
+void ControlsWidget::invertToggle() {
+  qDebug() << "toggled";
+  data.invert = !data.invert;
   emit updateControlData(data);
 }
 

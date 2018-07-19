@@ -86,7 +86,6 @@ void RawProcessor::load() {
   // TODO: Save to Disk
   // TODO: Batch process
   // TODO: BlackAndWhite switch
-  // TODO: AutoRotate + Rotate/Flip switch
   // TODO: Pipette-style black pt / wp
   //
   // printf("Raw 0 %d\n", raw[1]);

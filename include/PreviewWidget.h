@@ -48,6 +48,8 @@ private:
   int m_exposureLoc;
   int m_bpLoc;
   int m_outGammaLoc;
+  int m_grayscaleLoc;
+  int m_invertLoc;
 
   QMatrix4x4 image_ratio;
   QMatrix4x4 projection;

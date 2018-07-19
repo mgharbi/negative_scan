@@ -6,6 +6,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 
+#include "ControlData.h"
 
 QT_FORWARD_DECLARE_CLASS(QOpenGLTexture);
 QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram);
@@ -20,7 +21,7 @@ public:
   // virtual ~PreviewWidget ();
   
 public slots:
-  void gammaChanged(int idx, float value);
+  void controlDataChanged(ControlData cdata);
   void imageChanged(unsigned short* imdata, unsigned long w, unsigned long h);
 
 private:
@@ -31,6 +32,9 @@ private:
   QOpenGLBuffer m_tex_coord_vbo;
   int m_gammaLoc;
   int m_wpLoc;
+  int m_exposureLoc;
+  int m_bpLoc;
+  int m_outGammaLoc;
 
 protected:
   void initializeGL();

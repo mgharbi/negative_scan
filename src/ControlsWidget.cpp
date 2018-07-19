@@ -7,13 +7,15 @@
 ControlsWidget::ControlsWidget(QWidget *parent)
   : QWidget(parent)
 {
+  wp_steps = 5000;
+  gamma_steps = 1000;
   QVBoxLayout *layout = new QVBoxLayout(this);
 
-  QWidget *wb_widget = new QWidget();
-  QVBoxLayout *wb_layout = new QVBoxLayout(wb_widget);
-  wb_header_label = new QLabel("White Point", this);
-  wb_layout->addWidget(wb_header_label);
-  layout->addWidget(wb_widget);
+  QWidget *wp_widget = new QWidget();
+  QVBoxLayout *wp_layout = new QVBoxLayout(wp_widget);
+  wp_header_label = new QLabel("Negative White Point", this);
+  wp_layout->addWidget(wp_header_label);
+  layout->addWidget(wp_widget);
 
   QWidget *gamma_widget = new QWidget();
   QVBoxLayout *gamma_layout = new QVBoxLayout(gamma_widget);
@@ -21,31 +23,68 @@ ControlsWidget::ControlsWidget(QWidget *parent)
   gamma_layout->addWidget(gamma_header_label);
   layout->addWidget(gamma_widget);
 
+  QWidget *positive_widget = new QWidget();
+  QVBoxLayout *positive_layout = new QVBoxLayout(positive_widget);
+  QLabel *positive_header = new QLabel("Exposure, BP, out gamma", this);
+  positive_layout->addWidget(positive_header);
+  layout->addWidget(positive_widget);
+
+  exposure_slider = new QSlider(Qt::Horizontal, this);
+  bp_slider = new QSlider(Qt::Horizontal, this);
+  out_gamma_slider = new QSlider(Qt::Horizontal, this);
+  positive_layout->addWidget(exposure_slider);
+  positive_layout->addWidget(bp_slider);
+  positive_layout->addWidget(out_gamma_slider);
+
+  QObject::connect(
+      exposure_slider, &QSlider::valueChanged, 
+      this, [=](int val) { this->sliderChanged(6, val); });
+  QObject::connect(
+      bp_slider, &QSlider::valueChanged, 
+      this, [=](int val) { this->sliderChanged(7, val); });
+  QObject::connect(
+      out_gamma_slider, &QSlider::valueChanged, 
+      this, [=](int val) { this->sliderChanged(8, val); });
+
+  exposure_slider->setRange(-1000, 1000);
+  exposure_slider->setValue(1);
+  exposure_slider->setValue(0);
+
+  bp_slider->setRange(0, 1000);
+  bp_slider->setValue(1);
+  bp_slider->setValue(0);
+
+  out_gamma_slider->setRange(-gamma_steps, gamma_steps);
+  out_gamma_slider->setValue(1);
+  out_gamma_slider->setValue(0);
+
   // TODO: refactor as separate widget
   for (int i = 0; i < 3; ++i) {
     QSlider *s = new QSlider(Qt::Horizontal, this);
     QLabel *l = new QLabel("", this);
-    wb_sliders[i] = s;
-    wb_labels[i] = l;
+    l->setFixedWidth(40);
+    wp_sliders[i] = s;
+    wp_labels[i] = l;
 
     QWidget *sub_widget = new QWidget(this);
     QHBoxLayout *sub_layout = new QHBoxLayout(sub_widget);
     sub_layout->addWidget(l);
     sub_layout->addWidget(s);
-    wb_layout->addWidget(sub_widget);
+    wp_layout->addWidget(sub_widget);
 
     QObject::connect(
         s, &QSlider::valueChanged, 
         this, [=](int val) { this->sliderChanged(i, val); });
 
-    s->setRange(0, 100);
+    s->setRange(1, wp_steps);
     s->setSingleStep(1);
     s->setValue(1);
-    s->setValue(100);
+    s->setValue(wp_steps);
 
     // Gamma
     s = new QSlider(Qt::Horizontal, this);
     l = new QLabel("", this);
+    l->setFixedWidth(40);
     gamma_sliders[i] = s;
     gamma_labels[i] = l;
 
@@ -59,7 +98,7 @@ ControlsWidget::ControlsWidget(QWidget *parent)
         s, &QSlider::valueChanged, 
         this, [=](int val) { this->sliderChanged(3 + i, val); });
 
-    s->setRange(-10, 10);
+    s->setRange(-gamma_steps, gamma_steps);
     s->setSingleStep(1);
     s->setValue(-1);
     s->setValue(0);
@@ -74,24 +113,31 @@ ControlsWidget::ControlsWidget(QWidget *parent)
 }
 
 void ControlsWidget::sliderChanged(int idx, int val) {
-  if (idx < 0 || idx > 6) {
-    return;
-  }
-
-  qDebug() << idx << "changed to" << val;
-
   QString s;
   float value = 0.0f;
+
   if(idx < 3) { // white-balance
-    value = val*1.0f/100;
+    value = val*1.0f/wp_steps;
+    // value = val*1.0f/((1<<16) - 1);
+    data.wp[idx] = value;
     s.setNum(value, 'g', 2);
-    wb_labels[idx]->setText(s);
-  } else { // gamma
-    value = qExp(val*0.1f);
+    wp_labels[idx]->setText(s);
+  } else if ( idx < 6 ){ // gamma
+    value = qPow(2.0f, val*1.0f/gamma_steps);
+    data.gamma[idx - 3] = value;
     s.setNum(value, 'g', 2);
     gamma_labels[idx - 3]->setText(s);
+  } else if (idx == 6){ // exposure
+    value = qPow(2.0f, val*1.0f/1000);
+    data.exposure = value;
+  } else if (idx == 7){ // black point
+    value = val*1.0f/1000;
+    data.bp = value;
+  } else if (idx == 8){ // gamma
+    value = qPow(2.0f, val*1.0f/gamma_steps);
+    data.output_gamma = value;
   }
-  // emit setGamma(idx, value);
+  emit updateControlData(data);
 }
 
 ControlsWidget::~ControlsWidget() {

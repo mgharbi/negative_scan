@@ -7,6 +7,9 @@ RawProcessor::RawProcessor() {
 void RawProcessor::load() {
   iProcessor.imgdata.params.half_size = true;
 
+  // rotate
+  iProcessor.imgdata.params.user_flip = 3;
+
   iProcessor.imgdata.params.gamm[0] = 1.0;
   iProcessor.imgdata.params.gamm[1] = 1.0;
 
@@ -15,11 +18,9 @@ void RawProcessor::load() {
   iProcessor.imgdata.params.cropbox[2] = 4000;
   iProcessor.imgdata.params.cropbox[3] = 4000;
 
-  // iProcessor.imgdata.params.colors = 3;
   iProcessor.imgdata.params.output_bps = 16;
-  // iProcessor.imgdata.params.no_auto_bright = true
-
-  // iProcessor.imgdata.params.output_color = 0;  // raw space
+  iProcessor.imgdata.params.no_auto_bright = true;
+  iProcessor.imgdata.params.output_color = 0;  // raw space
 
   qDebug() << "use camera wb" << iProcessor.imgdata.params.use_camera_wb;
   qDebug() << "use auto wb" << iProcessor.imgdata.params.use_auto_wb;

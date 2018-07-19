@@ -3,12 +3,18 @@ varying vec2 texcoord;
 uniform sampler2D texture;
 uniform vec3 gamma;
 uniform vec3 white_point;
+uniform float exposure;
+uniform float black_point;
+uniform float output_gamma;
 void main() {
-  float eps = 5e-2;
-  float leps = log(eps);
-  vec3 negative = texture2D(texture, texcoord).xyz;
-  vec3 l = -log(negative + eps) + leps;
-  vec3 positive = exp(l);
-  gl_FragColor = vec4(positive, 1.0);
-  // gl_FragColor = vec4(0.1*gamma*texture2D(texture, texcoord).xyz, 1.0);
+  float eps = 1e-4;
+  vec3 negative = texture2D(texture, texcoord).xyz / 0.2;
+  vec3 wp_corrected = (negative + eps) / white_point;
+
+  // vec3 l = -log(wp_corrected) * gamma;
+  // vec3 positive = exp(l);
+  vec3 positive = clamp(exposure / wp_corrected - black_point, vec3(0.0), vec3(1.0));
+  vec3 gamma_corrected = pow(positive, gamma/output_gamma);
+
+  gl_FragColor = vec4(gamma_corrected, 1.0);
 }

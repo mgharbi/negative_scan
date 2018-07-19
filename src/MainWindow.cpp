@@ -18,9 +18,9 @@ MainWindow::MainWindow() {
   addDockWidget(Qt::RightDockWidgetArea, dock);
 
   QObject::connect(controls, 
-      &ControlsWidget::setGamma,
+      &ControlsWidget::updateControlData,
       preview,
-      &PreviewWidget::gammaChanged);
+      &PreviewWidget::controlDataChanged);
 
   QObject::connect(raw_processor, 
       &RawProcessor::updateImage,

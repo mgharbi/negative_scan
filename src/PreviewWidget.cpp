@@ -51,9 +51,15 @@ void PreviewWidget::initializeGL() {
   program->setUniformValue("texture", 0);
   m_gammaLoc = program->uniformLocation("gamma");
   m_wpLoc = program->uniformLocation("white_point");
+  m_exposureLoc = program->uniformLocation("exposure");
+  m_bpLoc = program->uniformLocation("black_point");
+  m_outGammaLoc = program->uniformLocation("output_gamma");
 
-  program->setUniformValue(m_gammaLoc, QVector3D(0, 1, 0));
-  program->setUniformValue(m_wpLoc, QVector3D(0, 1, 0));
+  program->setUniformValue(m_gammaLoc, QVector3D(1, 1, 1));
+  program->setUniformValue(m_wpLoc, QVector3D(1, 1, 1));
+  program->setUniformValue(m_exposureLoc, 1.0f);
+  program->setUniformValue(m_bpLoc, 0.0f);
+  program->setUniformValue(m_outGammaLoc, 1.0f);
 
   // Rectangle vertices
   static const GLfloat rectangle_vertices[] = {
@@ -141,10 +147,20 @@ void PreviewWidget::resizeGL(int width, int height)
   // qDebug() << "resizing " << width << " " << height;
 }
 
-void PreviewWidget::gammaChanged(int idx, float value) {
-  // qDebug() << "received gamma change signal" << idx << "val" << value;
+void PreviewWidget::controlDataChanged(ControlData cdata) {
+  // qDebug() << "received cdata change signal" 
+  //   << cdata.wp[0] 
+  //   << cdata.wp[1] 
+  //   << cdata.wp[2] 
+  //   << cdata.gamma[0] 
+  //   << cdata.gamma[1] 
+  //   << cdata.gamma[2];
   program->bind();
-  program->setUniformValue(m_gammaLoc, QVector3D(0, value, 0));
+  program->setUniformValue(m_gammaLoc, QVector3D(cdata.gamma[0], cdata.gamma[1], cdata.gamma[2]));
+  program->setUniformValue(m_wpLoc, QVector3D(cdata.wp[0], cdata.wp[1], cdata.wp[2]));
+  program->setUniformValue(m_exposureLoc, cdata.exposure);
+  program->setUniformValue(m_bpLoc, cdata.bp);
+  program->setUniformValue(m_outGammaLoc, cdata.output_gamma);
   program->release();
   update();
 }

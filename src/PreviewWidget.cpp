@@ -3,7 +3,9 @@
 #include <QImage>
 #include <QColor>
 #include <QOpenGLShaderProgram>
+#include <QOpenGLDebugLogger>
 #include <QOpenGLTexture>
+// #include <QSurfaceFormat>
 #include <QVector>
 #include <QVector3D>
 #include <QtDebug>
@@ -16,16 +18,27 @@ PreviewWidget::PreviewWidget(QWidget *parent)
   QHBoxLayout *layout = new QHBoxLayout;
 
   setLayout(layout);
+
+  // asks for a OpenGL 3.2 debug context using the Core profile
+  // QSurfaceFormat format;
+  // format.setMajorVersion(3);
+  // format.setMinorVersion(2);
+  // format.setProfile(QSurfaceFormat::CoreProfile);
+  // format.setOption(QSurfaceFormat::DebugContext);
+  // setFormat(format);
 }
 
 // PreviewWidget::~PreviewWidget () {
 // }
 
 void PreviewWidget::initializeGL() {
+  // context->create();
+
   initializeOpenGLFunctions();
 
   qDebug() << "OpenGL " << context()->format().majorVersion() << "."
            << context()->format().minorVersion();
+  // qDebug() << "has KHR ext?" << context()->hasExtension(QByteArrayLiteral("GL_KHR_debug"));
 
   program = new QOpenGLShaderProgram;
   program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":preview.vert");
@@ -35,10 +48,10 @@ void PreviewWidget::initializeGL() {
   program->link();
 
   program->bind();
+  program->setUniformValue("texture", 0);
   m_gammaLoc = program->uniformLocation("gamma");
   m_wpLoc = program->uniformLocation("white_point");
 
-  program->setUniformValue("texture", 0);
   program->setUniformValue(m_gammaLoc, QVector3D(0, 1, 0));
   program->setUniformValue(m_wpLoc, QVector3D(0, 1, 0));
 
@@ -75,6 +88,8 @@ void PreviewWidget::initializeGL() {
   img.fill(QColor::fromRgb(255, 128, 128));
   texture->setData(img);
 
+  qDebug() << "init texture id" << texture->textureId();
+
   qDebug() << "GL initialized" << context();
 }
 
@@ -100,11 +115,18 @@ void PreviewWidget::paintGL()
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
 
+
   QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
+  // qDebug() << "paint with texture" << texture->textureId();
+  // program->setUniformValue("texture", texture->textureId());
   program->bind();
-  texture-> bind();
-  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-  texture->release();
+  if (texture) {
+    texture-> bind();
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    texture->release();
+  } else {
+    qDebug() << "no texture available";
+  }
   program->release();
 
   // QMatrix4x4 m;
@@ -130,30 +152,59 @@ void PreviewWidget::gammaChanged(int idx, float value) {
 void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsigned long h) {
   if (!context()) {
     return;
-    // qDebug() << "context not yet initialized";
   }
+
+  // QOpenGLDebugLogger *logger = new QOpenGLDebugLogger(this);
+  // logger->initialize();
+  // qDebug() << "has KHR ext?" << context()->hasExtension(QByteArrayLiteral("GL_KHR_debug"));
+
   qDebug() << "Image changed" << context();
-  // // TODO : assert / wait for opengl
-  // // if (!program) {
-  // //   qDebug() << "no available program, aborting";
-  // // }
-  //
   qDebug() << "image has changed" << w << "x" << h << "pixels";
   qDebug() << "program is" << program;
   makeCurrent();
-  // qDebug() << "prebound prog";
-  // program->bind();
-  // qDebug() << "bound prog";
   if (texture) {
     qDebug() << "Deleting old texture";
     delete texture;
     texture = nullptr;
   }
   qDebug() << "Setting new texture";
-  QImage img(512, 512, QImage::Format_RGB888);
+
+  texture_data = new unsigned short[100*100*3];
+  for (int i = 0; i < 100*100*3; ++i) {
+    texture_data[i] = 1 << 15;
+  }
+  qDebug() << "imadata" << imdata[0] << imdata[10];
+  
+  // img.fill(QColor::fromRgb(255, 128, 128));
+
+  // texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+  // QImage img(512, 512, QImage::Format_RGB888);
+  // img.fill(QColor::fromRgb(128, 255, 128));
+  // QImage img(texture_data, 10, 10, QImage::Format_RGB888);
+  // QImage img(texture_data, 100, 100, QImage::Format_RGB888);
+  // qDebug() << "newImage" << img.width();
+  // texture->setData(img);
+  
+  QOpenGLTexture::PixelType pixType = QOpenGLTexture::UInt16;
+  QOpenGLTexture::PixelFormat pixFormat = QOpenGLTexture::RGB;
+  QOpenGLTexture::TextureFormat texFormat = QOpenGLTexture::RGB16_UNorm;
   texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-  img.fill(QColor::fromRgb(128, 128, 255));
-  texture->setData(img);
+  texture->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
+  texture->setSize(w, 10);
+  texture->setFormat(texFormat);
+  // texture->allocateStorage(pixFormat, pixType);
+  texture->allocateStorage();
+  // texture->generateMipMaps();
+  texture->setData(pixFormat, pixType, (void*) imdata);
+  
+  GLenum glErr = GL_NO_ERROR;
+  while((glErr = glGetError()) != GL_NO_ERROR) {
+    qDebug("ERROR LOADING TEXTURES");
+  }
+  // texture->setFormat(QOpenGLTexture::RGB16U);
+  // texture->allocateStorage(QOpenGLTexture::RGB_Integer, QOpenGLTexture::UInt16);
+  // texture->setData(QOpenGLTexture::RGB_Integer, QOpenGLTexture::UInt16, imdata);
+
   doneCurrent();
   update();
 

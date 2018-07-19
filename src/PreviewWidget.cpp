@@ -70,6 +70,7 @@ void PreviewWidget::initializeGL() {
   program->release();
 
   texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+
   QImage img(512, 512, QImage::Format_RGB888);
   img.fill(QColor::fromRgb(255, 128, 128));
   texture->setData(img);
@@ -101,8 +102,7 @@ void PreviewWidget::paintGL()
   program->bind();
   texture-> bind();
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-  qDebug() << "paint";
+  texture->release();
   program->release();
 
   // QMatrix4x4 m;
@@ -123,4 +123,29 @@ void PreviewWidget::gammaChanged(int idx, float value) {
   program->setUniformValue(m_gammaLoc, QVector3D(0, value, 0));
   program->release();
   update();
+}
+
+void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsigned long h) {
+  // // TODO : assert / wait for opengl
+  // // if (!program) {
+  // //   qDebug() << "no available program, aborting";
+  // // }
+  //
+  // // qDebug() << "image has changed" << w << "x" << h << "pixels";
+  // // qDebug() << "program is" << program;
+  // makeCurrent();
+  // qDebug() << "prebound prog";
+  // program->bind();
+  // qDebug() << "bound prog";
+  // if (texture) {
+  //   delete texture;
+  //   texture = nullptr;
+  // }
+  // QImage img(512, 512, QImage::Format_RGB888);
+  // texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+  // img.fill(QColor::fromRgb(255, 128, 128));
+  // texture->setData(img);
+  // doneCurrent();
+  //
+  // // program->release();
 }

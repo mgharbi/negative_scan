@@ -6,8 +6,7 @@
 MainWindow::MainWindow() {
   resize(QDesktopWidget().availableGeometry(this).size() * 0.7);
 
-  // raw_processor = new RawProcessor();
-  //
+  raw_processor = new RawProcessor();
 
   preview = new PreviewWidget(this);
   setCentralWidget(preview);
@@ -22,6 +21,13 @@ MainWindow::MainWindow() {
       &ControlsWidget::setGamma,
       preview,
       &PreviewWidget::gammaChanged);
+
+  QObject::connect(raw_processor, 
+      &RawProcessor::updateImage,
+      preview,
+      &PreviewWidget::imageChanged);
+
+  raw_processor->load();
   
   // histogram = new HistogramWidget();
   // setCentralWidget(histogram);

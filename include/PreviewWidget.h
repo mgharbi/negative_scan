@@ -21,6 +21,7 @@ public:
   
 public slots:
   void gammaChanged(int idx, float value);
+  void imageChanged(unsigned short* imdata, unsigned long w, unsigned long h);
 
 private:
   QOpenGLTexture *texture;

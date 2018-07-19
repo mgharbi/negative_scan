@@ -5,12 +5,19 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-# find_package(Qt5Core REQUIRED)
-# find_package(Qt5Widgets REQUIRED)
+# Libraw
+find_package(LibRaw REQUIRED)
+include_directories(${LIBRAW_INCLUDE_DIR})
+add_definitions(${LIBRAW_DEFINITIONS})
 
+find_package(JPEG REQUIRED)
+find_package(JASPER REQUIRED)
+find_package(LCMS REQUIRED)
+
+# QT5
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-
 include_directories(${Qt5Widgets_INCLUDES})
 add_definitions(${Qt5Widgets_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
@@ -19,10 +26,11 @@ include_directories(include)
 qt5_wrap_cpp(WRAPPED_HEADERS
   include/PreviewWidget.h
   include/ControlsWidget.h
+  include/RawProcessor.h
 )
 
 qt5_add_resources(RESOURCES
-  resources/shaders.qrc
+  resources/manifest.qrc
 )
 
 message("resources" ${RESOURCES})
@@ -32,10 +40,14 @@ set(SOURCES
  src/MainWindow.cpp
  src/ControlsWidget.cpp
  src/PreviewWidget.cpp
-#  src/RawProcessor.cpp
+ src/RawProcessor.cpp
  src/HistogramWidget.cpp
 )
 
 
 add_executable(main ${SOURCES} ${WRAPPED_HEADERS} ${RESOURCES})
 qt5_use_modules(main Widgets Core)
+target_link_libraries(main ${LIBRAW_LIBRARIES})
+target_link_libraries(main ${JPEG_LIBRARIES})
+target_link_libraries(main ${JASPER_LIBRARIES})
+target_link_libraries(main ${LCMS_LIBRARIES})

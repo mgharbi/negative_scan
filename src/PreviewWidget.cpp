@@ -92,10 +92,10 @@ void PreviewWidget::initializeGL() {
     -1.0f,  1.0f, 0.0f,
   };
 
-  static const GLfloat tex_coords[] = { 0.0f, 0.0f, 
-                                        1.0f, 0.0f,
+  static const GLfloat tex_coords[] = { 0.0f, 1.0f, 
                                         1.0f, 1.0f,
-                                        0.0f, 1.0f};
+                                        1.0f, 0.0f,
+                                        0.0f, 0.0f};
 
   m_vao.create();
   QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
@@ -138,10 +138,10 @@ void PreviewWidget::paintGL()
   QMatrix4x4 model;
   model.setToIdentity();
   model.translate(0, 0, -1);  // Translate scene in camera's fulcrum
+  // model.scale(-1, -1, 1);  // Translate scene in camera's fulcrum
 
   QMatrix4x4 scale_mtx;
-  scale_mtx.scale(scale, scale, 0);
-
+  scale_mtx.scale(scale, scale, 1);
 
   QPainter p(this);
 
@@ -149,8 +149,9 @@ void PreviewWidget::paintGL()
 
   glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  // glEnable(GL_DEPTH_TEST);
-  // glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
+  glDisable(GL_FRAMEBUFFER_SRGB);
 
   program->bind();
 
@@ -204,10 +205,10 @@ void PreviewWidget::resizeGL(int w, int h)
 }
 
 void PreviewWidget::controlDataChanged(ControlData cdata) {
-  qDebug() << "update controls" 
-           << "exposure:" << cdata.exposure
-           << "output_gamma:" << cdata.output_gamma
-           ;
+  // qDebug() << "update controls" 
+  //          << "exposure:" << cdata.exposure
+  //          << "output_gamma:" << cdata.output_gamma
+  //          ;
   program->bind();
   program->setUniformValue(m_gammaLoc, QVector3D(cdata.gamma[0], cdata.gamma[1], cdata.gamma[2]));
   program->setUniformValue(m_wpLoc, QVector3D(cdata.wp[0], cdata.wp[1], cdata.wp[2]));

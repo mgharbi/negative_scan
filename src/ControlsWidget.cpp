@@ -3,26 +3,26 @@
 #include <QtMath>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QFileDialog>
 
 ControlsWidget::ControlsWidget(QWidget *parent)
   : QWidget(parent)
 {
   wp_steps = 5000;
-  gamma_steps = 1000;
+  gamma_steps = 5000;
   QVBoxLayout *layout = new QVBoxLayout(this);
 
   grayscale_button = new QCheckBox("b/w", this);
   layout->addWidget(grayscale_button);
   QObject::connect(
-      grayscale_button, &QCheckBox::toggled, 
+      grayscale_button, &QCheckBox::clicked, 
       this, &ControlsWidget::grayscaleToggle);
 
   invert_button = new QCheckBox("invert", this);
   layout->addWidget(invert_button);
   QObject::connect(
-      invert_button, &QCheckBox::toggled, 
+      invert_button, &QCheckBox::clicked, 
       this, &ControlsWidget::invertToggle);
-  invert_button->toggle();
 
   QWidget *wp_widget = new QWidget();
   QVBoxLayout *wp_layout = new QVBoxLayout(wp_widget);
@@ -59,17 +59,6 @@ ControlsWidget::ControlsWidget(QWidget *parent)
       out_gamma_slider, &QSlider::valueChanged, 
       this, [=](int val) { this->sliderChanged(8, val); });
 
-  exposure_slider->setRange(-1000, 1000);
-  exposure_slider->setValue(1);
-  exposure_slider->setValue(0);
-
-  bp_slider->setRange(0, 1000);
-  bp_slider->setValue(1);
-  bp_slider->setValue(0);
-
-  out_gamma_slider->setRange(-gamma_steps, gamma_steps);
-  out_gamma_slider->setValue(1);
-  out_gamma_slider->setValue(0);
 
   // TODO: refactor as separate widget
   for (int i = 0; i < 3; ++i) {
@@ -89,11 +78,6 @@ ControlsWidget::ControlsWidget(QWidget *parent)
         s, &QSlider::valueChanged, 
         this, [=](int val) { this->sliderChanged(i, val); });
 
-    s->setRange(1, wp_steps);
-    s->setSingleStep(1);
-    s->setValue(1);
-    s->setValue(wp_steps);
-
     // Gamma
     s = new QSlider(Qt::Horizontal, this);
     l = new QLabel("", this);
@@ -111,18 +95,20 @@ ControlsWidget::ControlsWidget(QWidget *parent)
         s, &QSlider::valueChanged, 
         this, [=](int val) { this->sliderChanged(3 + i, val); });
 
-    s->setRange(-gamma_steps, gamma_steps);
-    s->setSingleStep(1);
-    s->setValue(-1);
-    s->setValue(0);
   }
   
   load_button = new QPushButton("load", this);
+  load_button->setToolTip(tr("load a raw file for processing"));
   layout->addWidget(load_button);
 
   QObject::connect(
       load_button, &QPushButton::clicked, 
       this, &ControlsWidget::loadImage);
+
+  reset();
+}
+
+ControlsWidget::~ControlsWidget() {
 }
 
 void ControlsWidget::sliderChanged(int idx, int val) {
@@ -136,7 +122,8 @@ void ControlsWidget::sliderChanged(int idx, int val) {
     s.setNum(value, 'f', 4);
     wp_labels[idx]->setText(s);
   } else if ( idx < 6 ){ // gamma
-    value = qPow(2.0f, val*2.0f/gamma_steps);
+    value = 1.0f + 2.0f*val/gamma_steps;
+    // value = qPow(2.0f, val*1.5f/gamma_steps);
     data.gamma[idx - 3] = value;
     s.setNum(value, 'f', 4);
     gamma_labels[idx - 3]->setText(s);
@@ -153,16 +140,74 @@ void ControlsWidget::sliderChanged(int idx, int val) {
   emit updateControlData(data);
 }
 
-void ControlsWidget::grayscaleToggle() {
-  data.grayscale = !data.grayscale;
+void ControlsWidget::grayscaleToggle(bool checked) {
+  data.grayscale = checked;
   emit updateControlData(data);
 }
 
-void ControlsWidget::invertToggle() {
-  qDebug() << "toggled";
-  data.invert = !data.invert;
+void ControlsWidget::invertToggle(bool checked) {
+  data.invert = checked;
   emit updateControlData(data);
 }
 
-ControlsWidget::~ControlsWidget() {
+void ControlsWidget::loadImage() {
+  QString filename = QFileDialog::getOpenFileName(this,
+      tr("Open Image"), "../data",
+      tr("RAW Files (*.cr2 *.dng *.CR2)"));
+  qDebug() << "loading image" << filename;
+  emit requestImage(filename);
+}
+
+
+void ControlsWidget::imageChanged() {
+  qDebug() << "image changed";
+  reset();
+}
+
+void ControlsWidget::reset() {
+  data = ControlData();
+
+  qDebug() << "reset";
+
+  exposure_slider->setRange(-1000, 1000);
+  exposure_slider->setValue(1);
+  exposure_slider->setValue(0);
+
+  bp_slider->setRange(0, 1000);
+  bp_slider->setValue(1);
+  bp_slider->setValue(0);
+
+  out_gamma_slider->setRange(-gamma_steps, gamma_steps);
+  out_gamma_slider->setValue(1);
+  out_gamma_slider->setValue(0);
+  exposure_slider->setRange(-1000, 1000);
+  exposure_slider->setValue(1);
+  exposure_slider->setValue(0);
+
+  bp_slider->setRange(0, 1000);
+  bp_slider->setValue(1);
+  bp_slider->setValue(0);
+
+  out_gamma_slider->setRange(-gamma_steps, gamma_steps);
+  out_gamma_slider->setValue(1);
+  out_gamma_slider->setValue(0);
+
+  for(int idx = 0; idx < 3; ++idx) {
+    QSlider *s = wp_sliders[idx];
+    s->setRange(1, wp_steps);
+    s->setSingleStep(1);
+    s->setValue(1);
+    s->setValue(wp_steps);
+
+    s = gamma_sliders[idx];
+    s->setRange(0, gamma_steps);
+    s->setSingleStep(1);
+    s->setValue(1);
+    s->setValue(0);
+  }
+
+  grayscale_button->setChecked(false);
+  invert_button->setChecked(true);
+
+  emit updateControlData(data);
 }

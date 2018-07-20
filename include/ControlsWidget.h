@@ -19,14 +19,19 @@ public:
 
 public:
   void sliderChanged(int idx, int value);
-  void grayscaleToggle();
-  void invertToggle();
+  void grayscaleToggle(bool checked);
+  void invertToggle(bool checked);
+  void loadImage();
+
+public slots:
+  void imageChanged();
 
 signals:
   void updateControlData(ControlData data);
-  void loadImage();
+  void requestImage(QString filename);
 
 private:
+  void reset();
   ControlData data;
 
   int wp_steps;
@@ -49,4 +54,6 @@ private:
   QSlider *bp_slider;
 
   QPushButton *load_button;
+  QPushButton *save_button;
+
 };

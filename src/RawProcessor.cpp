@@ -4,26 +4,32 @@
 RawProcessor::RawProcessor() {
 }
 
-void RawProcessor::load() {
+void RawProcessor::load(QString filename) {
+  if(filename.isEmpty()) {
+    return;
+  }
+
+  iProcessor.recycle();
+
   iProcessor.imgdata.params.half_size = true;
+
+  // Linear image
+  iProcessor.imgdata.params.gamm[0] = 1.0;
+  iProcessor.imgdata.params.gamm[1] = 1.0;
+
+  iProcessor.imgdata.params.output_bps = 16;  // 16-bits
+  iProcessor.imgdata.params.no_auto_bright = true;
+  iProcessor.imgdata.params.output_color = 1;  // linear sRGB
+  iProcessor.imgdata.params.use_camera_wb = true;
+  iProcessor.imgdata.params.use_camera_matrix = true;
 
   // rotate
   // iProcessor.imgdata.params.user_flip = 3;
-
-  iProcessor.imgdata.params.gamm[0] = 1.0;
-  iProcessor.imgdata.params.gamm[1] = 1.0;
 
   // iProcessor.imgdata.params.cropbox[0] = 0;
   // iProcessor.imgdata.params.cropbox[1] = 0;
   // iProcessor.imgdata.params.cropbox[2] = 4500;
   // iProcessor.imgdata.params.cropbox[3] = 3000;
-
-  iProcessor.imgdata.params.output_bps = 16;
-  iProcessor.imgdata.params.no_auto_bright = true;
-  iProcessor.imgdata.params.output_color = 1;  // linear sRGB
-
-  iProcessor.imgdata.params.use_camera_wb = true;
-  iProcessor.imgdata.params.use_camera_matrix = true;
 
   qDebug() << "use camera wb" << iProcessor.imgdata.params.use_camera_wb;
   qDebug() << "use auto wb" << iProcessor.imgdata.params.use_auto_wb;
@@ -32,8 +38,7 @@ void RawProcessor::load() {
   qDebug() << "tone curve" << iProcessor.imgdata.params.gamm[0]
                            << iProcessor.imgdata.params.gamm[1];
 
-  iProcessor.open_file("../data/pond.CR2");
-  // iProcessor.open_file("../data/FilmScans20180451.CR2");
+  iProcessor.open_file(filename.toStdString().c_str());
   iProcessor.unpack();
   iProcessor.dcraw_process();
 
@@ -81,16 +86,16 @@ void RawProcessor::load() {
   emit updateImage(ds_data, w2, h2);
   // emit updateImage(data, w, h);
 
+  // TODO: Reset button
+  // TODO: Save state
   // TODO: HalideProcessor
   // TODO: Save to Disk
-  // TODO: BlackAndWhite switch
   // TODO: Pipette-style black pt / wp
   // TODO: Presets
-  // TODO: Save state
   // TODO: multiple images
   // TODO: crop
   // TODO: Batch process
-  //
+  
   // printf("Raw 0 %d\n", raw[1]);
 //   iProcessor.imgdata.filter;
 //   int flip;

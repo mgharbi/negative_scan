@@ -2,6 +2,7 @@
 
 #include <libraw/libraw.h>
 #include <QObject>
+#include <QString>
 
 class RawProcessor: public QObject
 {
@@ -13,7 +14,7 @@ public:
   virtual ~RawProcessor ();
 
 public slots:
-  void load();
+  void load(QString filename);
 
 signals:
   void updateImage(unsigned short *imdata, unsigned long w, unsigned long h);

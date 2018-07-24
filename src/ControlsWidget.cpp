@@ -101,9 +101,25 @@ ControlsWidget::ControlsWidget(QWidget *parent)
   load_button->setToolTip(tr("load a raw file for processing"));
   layout->addWidget(load_button);
 
+  save_button = new QPushButton("save", this);
+  save_button->setToolTip(tr("save processed file"));
+  layout->addWidget(save_button);
+
+  reset_button = new QPushButton("reset", this);
+  reset_button->setToolTip(tr("reset settings"));
+  layout->addWidget(reset_button);
+
   QObject::connect(
       load_button, &QPushButton::clicked, 
       this, &ControlsWidget::loadImage);
+
+  QObject::connect(
+      save_button, &QPushButton::clicked, 
+      this, &ControlsWidget::requestSave);
+
+  QObject::connect(
+      reset_button, &QPushButton::clicked, 
+      this, &ControlsWidget::reset);
 
   reset();
 }
@@ -131,7 +147,7 @@ void ControlsWidget::sliderChanged(int idx, int val) {
     value = qPow(2.0f, val*5.0f/1000);
     data.exposure = value;
   } else if (idx == 7){ // black point
-    value = val*1.0f/1000;
+    value = val*4.0f/1000;
     data.bp = value;
   } else if (idx == 8){ // gamma
     value = 2.2f*qPow(2.0f, val*2.0f/gamma_steps);
@@ -160,8 +176,7 @@ void ControlsWidget::loadImage() {
 
 
 void ControlsWidget::imageChanged() {
-  qDebug() << "image changed";
-  reset();
+  // reset();
 }
 
 void ControlsWidget::reset() {

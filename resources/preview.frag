@@ -11,19 +11,18 @@ uniform bool invert;
 void main() {
   float eps = 1e-8;
   vec3 negative = 1.0*texture2D(texture, texcoord).xyz;
-  // vec3 wp_corrected = (negative + eps) / white_point;
-  // vec3 upper_bound = (1.0 + eps) / white_point;
 
-  vec3 wp_corrected = clamp((negative + eps) / white_point, 0.0, 1.0);
-  // vec3 upper_bound = (1.0 + eps);
+  // vec3 wp_corrected = (negative) / white_point;
+  vec3 wp_corrected = min((negative + eps) / white_point, 1.0);
 
-  // vec3 mask = vec3(texcoord.x > 0.5);
-  // vec3 mask2 = vec3(texcoord.y > 0.5);
+// maxi: wp / eps
+// mini: wp / 1+eps
 
   vec3 processed;
   if (invert) {
-    vec3 positive = pow(1.0 / wp_corrected - 1.0, 1.0 / gamma);
-    processed = clamp(exposure*(positive - black_point), vec3(0.0), vec3(1.0));
+    vec3 positive = max(1.0 / wp_corrected - (1.0 + eps) / white_point -  black_point, vec3(0.0));
+    vec3 film_gamma = pow(positive, 1.0 / gamma);
+    processed = exposure*(film_gamma);
   } else {
     processed = exposure*(wp_corrected - black_point);
   }

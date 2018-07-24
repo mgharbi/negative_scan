@@ -1,7 +1,25 @@
 #include "RawProcessor.h"
 #include <QDebug>
 
-RawProcessor::RawProcessor() {
+#include "subsampler.h"
+
+Image::Image(unsigned short* data, int width, int height) 
+  : data(data), width(width), height(height)
+{
+}
+
+Halide::Runtime::Buffer<uint16_t> Image::wrap() {
+  return Halide::Runtime::Buffer<uint16_t>(data, width, height, 3);
+}
+
+Image::~Image() {
+  if (data) {
+    delete[] data;
+    data = nullptr;
+  }
+}
+
+RawProcessor::RawProcessor() : currentImage(nullptr), currentFilename(nullptr) {
 }
 
 void RawProcessor::load(QString filename) {
@@ -9,7 +27,12 @@ void RawProcessor::load(QString filename) {
     return;
   }
 
-  iProcessor.recycle();
+  if (currentImage) {
+    delete currentImage;
+    iProcessor.recycle();
+  }
+
+  // currentFilename = filename;
 
   iProcessor.imgdata.params.half_size = true;
 
@@ -26,11 +49,6 @@ void RawProcessor::load(QString filename) {
   // rotate
   // iProcessor.imgdata.params.user_flip = 3;
 
-  // iProcessor.imgdata.params.cropbox[0] = 0;
-  // iProcessor.imgdata.params.cropbox[1] = 0;
-  // iProcessor.imgdata.params.cropbox[2] = 4500;
-  // iProcessor.imgdata.params.cropbox[3] = 3000;
-
   qDebug() << "use camera wb" << iProcessor.imgdata.params.use_camera_wb;
   qDebug() << "use auto wb" << iProcessor.imgdata.params.use_auto_wb;
   qDebug() << "use camera matrix" << iProcessor.imgdata.params.use_camera_matrix;
@@ -42,31 +60,32 @@ void RawProcessor::load(QString filename) {
   iProcessor.unpack();
   iProcessor.dcraw_process();
 
-  // int w = 0;
-  // int h = 0;
-  // int c = 0;
-  // int bpp = 0;
-  // iProcessor.get_mem_image_format(&w, &h, &c, &bpp);
-  // qDebug() << "post processed image" << w << "x" << h << "with" << c <<
-  //   "colors and" << bpp << "bpp";
-  // if(bpp != 16) {
-  //   qDebug() << "unexpected bit depth";
-  // }
-  // unsigned short* data = new unsigned short[w*h*c];
-  // iProcessor.copy_mem_image(data, w*(bpp/8)*c, 0);
-  // qDebug() << "copied mem image" << data[0] << data[10];
-  // // TODO:delete[] data;
+  int w = 0;
+  int h = 0;
+  int c = 0;
+  int bpp = 0;
+  iProcessor.get_mem_image_format(&w, &h, &c, &bpp);
+  qDebug() << "post processed image" << w << "x" << h << "with" << c <<
+    "colors and" << bpp << "bpp";
+  if(bpp != 16) {
+    qDebug() << "unexpected bit depth";
+  }
+  unsigned short* data = new unsigned short[w*h*c];
+  iProcessor.copy_mem_image(data, w*(bpp/8)*c, 0);
+  qDebug() << "copied mem image" << data[0] << data[10];
+  // TODO:delete[] data;
+  
+  currentImage = new Image(data, w, h);
 
-  libraw_processed_image_t * processed = iProcessor.dcraw_make_mem_image();
-  unsigned short* data = (unsigned short*) processed->data;
-  int w = processed->width;
-  int h = processed->height;
+  // libraw_processed_image_t * processed = iProcessor.dcraw_make_mem_image();
+  // unsigned short* data = (unsigned short*) processed->data;
+  // int w = processed->width;
+  // int h = processed->height;
 
+  qDebug() << "subsample and convert uint16";
   int w2 = w / 2;
   int h2 = h / 2;
   unsigned short* ds_data = new unsigned short[w2*h2*3];
-
-  qDebug() << "subsample and convert uint16";
   unsigned short maxi = 0;
   for (int y = 0; y < h2; ++y)
   for (int x = 0; x < w2; ++x)
@@ -79,14 +98,13 @@ void RawProcessor::load(QString filename) {
     maxi = std::max(maxi, data[idx + 0]);
   }
   qDebug() << "subsample done, max val" <<  maxi;
-  LibRaw::dcraw_clear_mem(processed);
 
-  qDebug() << "post processed image" << w << "x" << h;
+  // LibRaw::dcraw_clear_mem(processed);
+  //
+  // qDebug() << "post processed image" << w << "x" << h;
 
   emit updateImage(ds_data, w2, h2);
-  // emit updateImage(data, w, h);
 
-  // TODO: Reset button
   // TODO: Save state
   // TODO: HalideProcessor
   // TODO: Save to Disk
@@ -102,5 +120,13 @@ void RawProcessor::load(QString filename) {
 // Image orientation (0 if does not require rotation; 3 if requires 180-deg rotation; 5 if 90 deg counterclockwise, 6 if 90 deg clockwise).
 }
 
+void RawProcessor::save() {
+  qDebug() << "saving";
+}
+
 RawProcessor::~RawProcessor() {
+  if (currentImage) {
+    delete currentImage;
+    iProcessor.recycle();
+  }
 }

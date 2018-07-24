@@ -37,6 +37,12 @@ MainWindow::MainWindow() {
       raw_processor, 
       &RawProcessor::load);
 
+  QObject::connect(
+      controls,
+      &ControlsWidget::requestSave,
+      raw_processor, 
+      &RawProcessor::save);
+
   // histogram = new HistogramWidget();
   // QDockWidget *tools = new QDockWidget(tr("tools"), this);
   // tools->setWidget(histogram);

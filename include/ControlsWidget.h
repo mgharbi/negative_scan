@@ -29,6 +29,7 @@ public slots:
 signals:
   void updateControlData(ControlData data);
   void requestImage(QString filename);
+  void requestSave();
 
 private:
   void reset();
@@ -55,5 +56,6 @@ private:
 
   QPushButton *load_button;
   QPushButton *save_button;
+  QPushButton *reset_button;
 
 };

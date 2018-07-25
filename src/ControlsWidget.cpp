@@ -150,7 +150,7 @@ void ControlsWidget::sliderChanged(int idx, int val) {
     value = val*4.0f/1000;
     data.bp = value;
   } else if (idx == 8){ // gamma
-    value = 2.2f*qPow(2.0f, val*2.0f/gamma_steps);
+    value = 1.0f*qPow(2.0f, val*2.0f/gamma_steps);
     data.output_gamma = value;
   }
   emit updateControlData(data);

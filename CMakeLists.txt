@@ -57,9 +57,13 @@ set(SOURCES
 
 halide_library(subsampler SRCS src/hl/subsampler_generator.cpp)
 halide_library(invert_negative SRCS src/hl/invert_negative.cpp)
+halide_library(invert_negative_bw SRCS src/hl/invert_negative.cpp
+               GENERATOR_ARGS bw=true
+               GENERATOR_NAME invert_negative)
 set(NEGASCAN_HL_LIBS
   subsampler
   invert_negative
+  invert_negative_bw
 )
 
 # message(flags ${CMAKE_CXX_FLAGS})

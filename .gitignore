@@ -4,3 +4,5 @@ data/
 compile_commands.json
 .DS_Store
 equations.pdf
+output
+vendors

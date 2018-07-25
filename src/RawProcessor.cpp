@@ -5,6 +5,7 @@
 
 #include "subsampler.h"
 #include "invert_negative.h"
+#include "invert_negative_bw.h"
 
 
 using Halide::Runtime::Buffer;
@@ -19,13 +20,14 @@ void RawProcessor::load(QString filename) {
   }
 
   if (currentImage) {
+    delete[] currentImage->data();
     delete currentImage;
     iProcessor.recycle();
   }
 
   // currentFilename = filename;
   
-  iProcessor.imgdata.params.half_size = true;
+  // iProcessor.imgdata.params.half_size = true;
   // rotate
   // iProcessor.imgdata.params.user_flip = 3;
 
@@ -35,8 +37,8 @@ void RawProcessor::load(QString filename) {
   iProcessor.imgdata.params.output_bps = 16;  // 16-bits
   iProcessor.imgdata.params.no_auto_bright = true;
   iProcessor.imgdata.params.output_color = 1;  // linear sRGB
-  iProcessor.imgdata.params.use_camera_wb = true;
-  iProcessor.imgdata.params.use_camera_matrix = true;
+  iProcessor.imgdata.params.use_camera_wb = false;
+  iProcessor.imgdata.params.use_camera_matrix = false;
 
   iProcessor.open_file(filename.toStdString().c_str());
   iProcessor.unpack();
@@ -108,14 +110,26 @@ void RawProcessor::save(ControlData data) {
                       << data.gamma[1]
                       << data.gamma[2]
            << "output gamma" << data.output_gamma;
-  invert_negative(
-      *currentImage, 
-      Buffer<float>(data.gamma.data(), 3),
-      Buffer<float>(data.wp.data(), 3),
-      data.exposure,
-      data.bp,
-      data.output_gamma,
-      processed);
+  if(data.grayscale) {
+    qDebug() << "gray";
+    invert_negative_bw(
+        *currentImage, 
+        Buffer<float>(data.gamma.data(), 3),
+        Buffer<float>(data.wp.data(), 3),
+        data.exposure,
+        data.bp,
+        data.output_gamma,
+        processed);
+  } else {
+    invert_negative(
+        *currentImage, 
+        Buffer<float>(data.gamma.data(), 3),
+        Buffer<float>(data.wp.data(), 3),
+        data.exposure,
+        data.bp,
+        data.output_gamma,
+        processed);
+  }
   qDebug() << "saving";
 
   TIFF *out= TIFFOpen("new.tif", "w");
@@ -143,16 +157,20 @@ void RawProcessor::save(ControlData data) {
   //Now writing image to the file one strip at a time
   for (uint32 row = 0; row < height; row++)
   {
-    memcpy(buf, &processed.data()[(height-row-1)*3*width], linebytes);
-    // check the index here, and figure out why not using h*linebytes
+    // memcpy(buf, &processed.data()[(height-row-1)*3*width], linebytes);
+    memcpy(buf, &processed.data()[row*3*width], linebytes);
     if (TIFFWriteScanline(out, buf, row, 0) < 0)
       break;
   }
   TIFFClose(out);
 
   qDebug() << ".tiff file saved";
-
 }
 
 RawProcessor::~RawProcessor() {
+  if (currentImage) {
+    delete[] currentImage->data();
+    delete currentImage;
+    iProcessor.recycle();
+  }
 }

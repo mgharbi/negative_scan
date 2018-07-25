@@ -138,7 +138,6 @@ void PreviewWidget::paintGL()
   QMatrix4x4 model;
   model.setToIdentity();
   model.translate(0, 0, -1);  // Translate scene in camera's fulcrum
-  // model.scale(-1, -1, 1);  // Translate scene in camera's fulcrum
 
   QMatrix4x4 scale_mtx;
   scale_mtx.scale(scale, scale, 1);

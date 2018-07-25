@@ -1,0 +1,7 @@
+- Save state / presets
+- Bidirectional link slider / value
+- Histograms
+- Pipette-style black pt / wp
+- crop / rotate
+- Batch process
+- multiple images

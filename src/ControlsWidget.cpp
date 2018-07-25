@@ -4,6 +4,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFileDialog>
+#include <QtGlobal>
 
 ControlsWidget::ControlsWidget(QWidget *parent)
   : QWidget(parent)
@@ -11,6 +12,12 @@ ControlsWidget::ControlsWidget(QWidget *parent)
   wp_steps = 5000;
   gamma_steps = 5000;
   QVBoxLayout *layout = new QVBoxLayout(this);
+
+  QLabel *presets_label = new QLabel("Presets", this);
+  layout->addWidget(presets_label);
+  presets_list = new QComboBox(this);
+  layout->addWidget(presets_list);
+  setPresets();
 
   grayscale_button = new QCheckBox("b/w", this);
   layout->addWidget(grayscale_button);
@@ -58,7 +65,6 @@ ControlsWidget::ControlsWidget(QWidget *parent)
   QObject::connect(
       out_gamma_slider, &QSlider::valueChanged, 
       this, [=](int val) { this->sliderChanged(8, val); });
-
 
   // TODO: refactor as separate widget
   for (int i = 0; i < 3; ++i) {
@@ -224,5 +230,44 @@ void ControlsWidget::reset() {
   grayscale_button->setChecked(false);
   invert_button->setChecked(true);
 
+  emit updateControlData(data);
+}
+
+void ControlsWidget::setPresets() {
+  // TODO: presets should be elsewhere: e.g. .json resources
+  presets_list->addItem(tr("custom"), 0);
+  presets_list->addItem(tr("Ektar 100"), 1);
+  presets_list->addItem(tr("Portra 160"), 2);
+  presets_list->addItem(tr("Portra 400"), 3);
+
+  presets.append(ControlData());
+
+  ControlData ektar;
+  ektar.gamma[0] = 1.7966454;
+  ektar.gamma[1] = 1.75318663;
+  ektar.gamma[2] = 1.52816018;
+  presets.append(ektar);
+
+  ControlData portra160;
+  portra160.gamma[0] = 1.90471932;
+  portra160.gamma[1] = 1.86499212;
+  portra160.gamma[2] = 1.6708782;
+  presets.append(portra160);
+
+  ControlData portra400;
+  portra400.gamma[0] = 1.84946131;
+  portra400.gamma[1] = 1.81149687;
+  portra400.gamma[2] = 1.61283489;
+  presets.append(portra400);
+
+  QObject::connect(
+      presets_list, 
+      static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), 
+      this,
+      &ControlsWidget::selectPreset);
+}
+
+void ControlsWidget::selectPreset(int index) {
+  data = presets[index];
   emit updateControlData(data);
 }

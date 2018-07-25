@@ -59,7 +59,6 @@ void RawProcessor::load(QString filename) {
   qDebug() << "copied mem image" << data[0] << data[10];
   
   currentImage = new Buffer<uint16_t>(data, 3, w, h);
-  // TODO:delete[] data;
 
   // Make preview
   float aspect = ((float) w) / h;
@@ -80,18 +79,7 @@ void RawProcessor::load(QString filename) {
   // unsigned short* data = (unsigned short*) processed->data;
   // int w = processed->width;
   // int h = processed->height;
-
   // LibRaw::dcraw_clear_mem(processed);
-  //
-  // qDebug() << "post processed image" << w << "x" << h;
-
-  // TODO: Save state
-  // TODO: Save to Disk
-  // TODO: Pipette-style black pt / wp
-  // TODO: Presets
-  // TODO: multiple images
-  // TODO: crop
-  // TODO: Batch process
 }
 
 void RawProcessor::save(ControlData data) {

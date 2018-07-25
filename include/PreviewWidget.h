@@ -72,5 +72,4 @@ protected:
   void paintGL();
   void resizeGL(int width, int height);
   void setupVertexAttribs();
-
 };

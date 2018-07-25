@@ -5,6 +5,8 @@
 #include <QSlider>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QList>
 
 #include "ControlData.h"
 
@@ -25,6 +27,7 @@ public:
 
 public slots:
   void imageChanged();
+  void selectPreset(int index);
 
 signals:
   void updateControlData(ControlData data);
@@ -33,12 +36,16 @@ signals:
 
 private:
   void reset();
+  void setPresets();
+
+  QList<ControlData> presets;
   ControlData data;
 
   int wp_steps;
   int gamma_steps;
 
   // UI
+  QComboBox *presets_list;
   QCheckBox *grayscale_button;
   QCheckBox *invert_button;
 

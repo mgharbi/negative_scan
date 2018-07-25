@@ -115,7 +115,7 @@ ControlsWidget::ControlsWidget(QWidget *parent)
 
   QObject::connect(
       save_button, &QPushButton::clicked, 
-      this, &ControlsWidget::requestSave);
+      this, [=] () { ControlsWidget::requestSave(data); } );
 
   QObject::connect(
       reset_button, &QPushButton::clicked, 
@@ -144,7 +144,7 @@ void ControlsWidget::sliderChanged(int idx, int val) {
     s.setNum(value, 'f', 4);
     gamma_labels[idx - 3]->setText(s);
   } else if (idx == 6){ // exposure
-    value = qPow(2.0f, val*5.0f/1000);
+    value = qPow(2.0f, val*8.0f/1000);
     data.exposure = value;
   } else if (idx == 7){ // black point
     value = val*4.0f/1000;
@@ -199,7 +199,7 @@ void ControlsWidget::reset() {
   exposure_slider->setValue(1);
   exposure_slider->setValue(0);
 
-  bp_slider->setRange(0, 1000);
+  bp_slider->setRange(-100, 1000);
   bp_slider->setValue(1);
   bp_slider->setValue(0);
 

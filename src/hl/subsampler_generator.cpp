@@ -8,12 +8,28 @@ using Halide::Func;
 
 class SubsamplerGenerator : public Generator<SubsamplerGenerator> {
 public:
-    Input<Buffer<int16_t>> input{"data", 3};
-    Output<Buffer<int16_t>> output{"output", 3};
+    Input<Buffer<uint16_t>> input{"data", 3};
+    Input<int> width{"width"};
+    Input<int> height{"height"};
+    Output<Buffer<uint16_t>> output{"output", 3};
 
     void generate() {
-      Var x("x"), y("y"), c("c");
-      output(x, y, c) = input(x, y, c);
+        Var x("x"), y("y"), c("c");
+
+        Expr iwidth = input.dim(1).extent();
+        Expr iheight = input.dim(2).extent();
+
+        Expr x_in = cast<int>(iwidth*((x + 0.5f) / width));
+        Expr y_in = cast<int>(iheight*((y + 0.5f) / height));
+
+        output(c, x, y) = input(c, x_in, y_in);
+    }
+
+    void schedule() {
+        Var x("x"), y("y"), c("c");
+        output
+            .parallel(y, 8)
+            .vectorize(x, 8);
     }
 
 };

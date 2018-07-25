@@ -13,8 +13,11 @@ include_directories(${LIBRAW_INCLUDE_DIR})
 add_definitions(${LIBRAW_DEFINITIONS})
 
 find_package(JPEG REQUIRED)
+find_package(TIFF REQUIRED)
 find_package(JASPER REQUIRED)
 find_package(LCMS REQUIRED)
+
+include_directories(${TIFF_INCLUDE_DIR})
 
 # QT5
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
@@ -53,9 +56,14 @@ set(SOURCES
 )
 
 halide_library(subsampler SRCS src/hl/subsampler_generator.cpp)
+halide_library(invert_negative SRCS src/hl/invert_negative.cpp)
 set(NEGASCAN_HL_LIBS
   subsampler
+  invert_negative
 )
+
+# message(flags ${CMAKE_CXX_FLAGS})
+# set(${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS} -fvisibility=default)  # Halide complains otherwise
 
 add_executable(main ${SOURCES} ${WRAPPED_HEADERS} ${RESOURCES})
 
@@ -63,6 +71,7 @@ qt5_use_modules(main Widgets Core)
 
 target_link_libraries(main ${LIBRAW_LIBRARIES})
 target_link_libraries(main ${JPEG_LIBRARIES})
+target_link_libraries(main ${TIFF_LIBRARIES})
 target_link_libraries(main ${JASPER_LIBRARIES})
 target_link_libraries(main ${LCMS_LIBRARIES})
 target_link_libraries(main ${NEGASCAN_HL_LIBS})

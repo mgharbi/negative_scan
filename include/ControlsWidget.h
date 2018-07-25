@@ -29,7 +29,7 @@ public slots:
 signals:
   void updateControlData(ControlData data);
   void requestImage(QString filename);
-  void requestSave();
+  void requestSave(ControlData data);
 
 private:
   void reset();

@@ -16,22 +16,15 @@
 PreviewWidget::PreviewWidget(QWidget *parent)
   : QOpenGLWidget(parent){
 
-  QHBoxLayout *layout = new QHBoxLayout(this);
+    QHBoxLayout *layout = new QHBoxLayout(this);
 
-  // setLayout(layout);
+    rotate_button = new QPushButton("rotate", this);
+    QObject::connect(
+        rotate_button, &QPushButton::clicked, 
+        this, &PreviewWidget::rotate_camera);
 
-  rotate_button = new QPushButton("rotate", this);
-  // layout->addWidget(load_button);
-  QObject::connect(
-      rotate_button, &QPushButton::clicked, 
-      this, &PreviewWidget::rotate_camera);
-
-  projection.setToIdentity();
-  translation.setToIdentity();
-  image_ratio.setToIdentity();
-  rotation.setToIdentity();
-  scale = 1.0f;
-}
+    reset_camera();
+  }
 
 PreviewWidget::~PreviewWidget () {
   if(texture) {
@@ -44,11 +37,19 @@ PreviewWidget::~PreviewWidget () {
   }
 }
 
+void PreviewWidget::reset_camera () {
+  projection.setToIdentity();
+  translation.setToIdentity();
+  image_ratio.setToIdentity();
+  rotation.setToIdentity();
+  scale = 1.0f;
+}
+
 void PreviewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
   qDebug() << "OpenGL " << context()->format().majorVersion() << "."
-           << context()->format().minorVersion();
+    << context()->format().minorVersion();
 
   program = new QOpenGLShaderProgram;
   program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":preview.vert");
@@ -93,9 +94,9 @@ void PreviewWidget::initializeGL() {
   };
 
   static const GLfloat tex_coords[] = { 0.0f, 1.0f, 
-                                        1.0f, 1.0f,
-                                        1.0f, 0.0f,
-                                        0.0f, 0.0f};
+    1.0f, 1.0f,
+    1.0f, 0.0f,
+    0.0f, 0.0f};
 
   m_vao.create();
   QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
@@ -106,13 +107,12 @@ void PreviewWidget::initializeGL() {
   m_tex_coord_vbo.create();
   m_tex_coord_vbo.bind();
   m_tex_coord_vbo.allocate(tex_coords, 4*2*sizeof(GLfloat));
-  
+
   setupVertexAttribs();
 
   program->release();
 
   texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-
   QImage img(1, 1, QImage::Format_RGB888);
   img.fill(QColor::fromRgb(128, 128, 128));
   texture->setData(img);
@@ -120,17 +120,17 @@ void PreviewWidget::initializeGL() {
 
 void PreviewWidget::setupVertexAttribs()
 {
-    QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+  QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
-    m_vert_pos_vbo.bind();
-    f->glEnableVertexAttribArray(0);
-    f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-    m_vert_pos_vbo.release();
+  m_vert_pos_vbo.bind();
+  f->glEnableVertexAttribArray(0);
+  f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+  m_vert_pos_vbo.release();
 
-    m_tex_coord_vbo.bind();
-    f->glEnableVertexAttribArray(1);
-    f->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
-    m_tex_coord_vbo.release();
+  m_tex_coord_vbo.bind();
+  f->glEnableVertexAttribArray(1);
+  f->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
+  m_tex_coord_vbo.release();
 }
 
 void PreviewWidget::paintGL()
@@ -205,10 +205,6 @@ void PreviewWidget::resizeGL(int w, int h)
 }
 
 void PreviewWidget::controlDataChanged(ControlData cdata) {
-  // qDebug() << "update controls" 
-  //          << "exposure:" << cdata.exposure
-  //          << "output_gamma:" << cdata.output_gamma
-  //          ;
   program->bind();
   program->setUniformValue(m_gammaLoc, QVector3D(cdata.gamma[0], cdata.gamma[1], cdata.gamma[2]));
   program->setUniformValue(m_wpLoc, QVector3D(cdata.wp[0], cdata.wp[1], cdata.wp[2]));
@@ -246,7 +242,7 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
   texture->setFormat(texFormat);
   texture->allocateStorage();
   texture->setData(pixFormat, pixType, (void*) imdata);
-  
+
   GLenum glErr = GL_NO_ERROR;
   while((glErr = glGetError()) != GL_NO_ERROR) {
     qDebug("ERROR LOADING TEXTURES");
@@ -273,7 +269,7 @@ void PreviewWidget::mouseMoveEvent(QMouseEvent *e) {
   mousePreviousPosition = QVector2D(e->localPos());
 
   diff.setY(-diff.y());
-  
+
   diff /= QVector2D(size().width(), size().height());
 
   translation.translate(diff);

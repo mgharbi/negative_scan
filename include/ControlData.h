@@ -8,7 +8,16 @@ class ControlData
 {
 public:
   ControlData() : gamma(3, 1.0f), wp(3, 1.0f), exposure(1.0f),
-  bp(0.0f), output_gamma(1.0f), grayscale(false), invert(true) {};
+  bp(0.0f), output_gamma(2.2f), grayscale(false), invert(true)
+  {
+    // gamma[0] = 1.90471932;
+    // gamma[1] = 1.86499212;
+    // gamma[2] = 1.6708782;
+    // wp[0] = 0.7725490196078432;
+    // wp[1] = 0.6588235294117647;
+    // wp[2] = 0.5176470588235295;
+// 1.90471932,  1.86499212,  1.6708782 |  0.52501174,  0.5361953 ,  0.59848765
+  };
 
   vector<float> gamma;
   vector<float> wp;

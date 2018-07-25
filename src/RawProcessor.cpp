@@ -1,23 +1,14 @@
 #include "RawProcessor.h"
 #include <QDebug>
 
+#include <tiffio.h>
+
 #include "subsampler.h"
+#include "invert_negative.h"
 
-Image::Image(unsigned short* data, int width, int height) 
-  : data(data), width(width), height(height)
-{
-}
 
-Halide::Runtime::Buffer<uint16_t> Image::wrap() {
-  return Halide::Runtime::Buffer<uint16_t>(data, width, height, 3);
-}
+using Halide::Runtime::Buffer;
 
-Image::~Image() {
-  if (data) {
-    delete[] data;
-    data = nullptr;
-  }
-}
 
 RawProcessor::RawProcessor() : currentImage(nullptr), currentFilename(nullptr) {
 }
@@ -33,28 +24,19 @@ void RawProcessor::load(QString filename) {
   }
 
   // currentFilename = filename;
-
+  
   iProcessor.imgdata.params.half_size = true;
+  // rotate
+  // iProcessor.imgdata.params.user_flip = 3;
 
   // Linear image
   iProcessor.imgdata.params.gamm[0] = 1.0;
   iProcessor.imgdata.params.gamm[1] = 1.0;
-
   iProcessor.imgdata.params.output_bps = 16;  // 16-bits
   iProcessor.imgdata.params.no_auto_bright = true;
   iProcessor.imgdata.params.output_color = 1;  // linear sRGB
   iProcessor.imgdata.params.use_camera_wb = true;
   iProcessor.imgdata.params.use_camera_matrix = true;
-
-  // rotate
-  // iProcessor.imgdata.params.user_flip = 3;
-
-  qDebug() << "use camera wb" << iProcessor.imgdata.params.use_camera_wb;
-  qDebug() << "use auto wb" << iProcessor.imgdata.params.use_auto_wb;
-  qDebug() << "use camera matrix" << iProcessor.imgdata.params.use_camera_matrix;
-  qDebug() << "no auto bright" << iProcessor.imgdata.params.no_auto_bright;
-  qDebug() << "tone curve" << iProcessor.imgdata.params.gamm[0]
-                           << iProcessor.imgdata.params.gamm[1];
 
   iProcessor.open_file(filename.toStdString().c_str());
   iProcessor.unpack();
@@ -73,60 +55,104 @@ void RawProcessor::load(QString filename) {
   unsigned short* data = new unsigned short[w*h*c];
   iProcessor.copy_mem_image(data, w*(bpp/8)*c, 0);
   qDebug() << "copied mem image" << data[0] << data[10];
-  // TODO:delete[] data;
   
-  currentImage = new Image(data, w, h);
+  currentImage = new Buffer<uint16_t>(data, 3, w, h);
+  // TODO:delete[] data;
+
+  // Make preview
+  float aspect = ((float) w) / h;
+  int preview_w = 0, preview_h = 0;
+  if ( w > h ) {
+    preview_w = 1024;
+    preview_h = preview_w / aspect;
+  } else {
+    preview_h = 1024;
+    preview_w = preview_h * aspect;
+  }
+
+  Buffer<uint16_t> preview(3, preview_w, preview_h);
+  subsampler(*currentImage, preview_w, preview_h, preview);
+  emit updateImage(preview.data(), preview_w, preview_h);
 
   // libraw_processed_image_t * processed = iProcessor.dcraw_make_mem_image();
   // unsigned short* data = (unsigned short*) processed->data;
   // int w = processed->width;
   // int h = processed->height;
 
-  qDebug() << "subsample and convert uint16";
-  int w2 = w / 2;
-  int h2 = h / 2;
-  unsigned short* ds_data = new unsigned short[w2*h2*3];
-  unsigned short maxi = 0;
-  for (int y = 0; y < h2; ++y)
-  for (int x = 0; x < w2; ++x)
-  {
-    int idx = 3*(2*x + 2*y*w);
-    int idx_ds = 3*(x + y*w2);
-    ds_data[idx_ds + 0] = data[idx + 0];
-    ds_data[idx_ds + 1] = data[idx + 1];
-    ds_data[idx_ds + 2] = data[idx + 2];
-    maxi = std::max(maxi, data[idx + 0]);
-  }
-  qDebug() << "subsample done, max val" <<  maxi;
-
   // LibRaw::dcraw_clear_mem(processed);
   //
   // qDebug() << "post processed image" << w << "x" << h;
 
-  emit updateImage(ds_data, w2, h2);
-
   // TODO: Save state
-  // TODO: HalideProcessor
   // TODO: Save to Disk
   // TODO: Pipette-style black pt / wp
   // TODO: Presets
   // TODO: multiple images
   // TODO: crop
   // TODO: Batch process
-  
-  // printf("Raw 0 %d\n", raw[1]);
-//   iProcessor.imgdata.filter;
-//   int flip;
-// Image orientation (0 if does not require rotation; 3 if requires 180-deg rotation; 5 if 90 deg counterclockwise, 6 if 90 deg clockwise).
 }
 
-void RawProcessor::save() {
+void RawProcessor::save(ControlData data) {
+  if (!currentImage) {
+    qDebug() << "no image open, abort";
+    return;
+  }
+  int width = currentImage->dim(1).extent();
+  int height = currentImage->dim(2).extent();
+  Buffer<uint16_t> processed(3, width, height);
+  qDebug() << "inverting negative"
+           << "wp" << data.wp[0] 
+                      << data.wp[1]
+                      << data.wp[2]
+           << "gamma" << data.gamma[0] 
+                      << data.gamma[1]
+                      << data.gamma[2]
+           << "output gamma" << data.output_gamma;
+  invert_negative(
+      *currentImage, 
+      Buffer<float>(data.gamma.data(), 3),
+      Buffer<float>(data.wp.data(), 3),
+      data.exposure,
+      data.bp,
+      data.output_gamma,
+      processed);
   qDebug() << "saving";
+
+  TIFF *out= TIFFOpen("new.tif", "w");
+  TIFFSetField (out, TIFFTAG_IMAGEWIDTH, width);
+  TIFFSetField (out, TIFFTAG_IMAGELENGTH, height);
+  TIFFSetField (out, TIFFTAG_SAMPLESPERPIXEL, 3);
+  TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 16);
+  TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+  TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+  TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+
+  tsize_t linebytes = 3 * width * sizeof(uint16_t);
+  unsigned char *buf = NULL;        
+  //    Allocating memory to store the pixels of current row
+  if (TIFFScanlineSize(out) >= linebytes) {
+    buf =(unsigned char *)_TIFFmalloc(linebytes);
+  }
+  else {
+    buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
+  }
+
+  // We set the strip size of the file to be size of one row of pixels
+  TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, width * 3));
+
+  //Now writing image to the file one strip at a time
+  for (uint32 row = 0; row < height; row++)
+  {
+    memcpy(buf, &processed.data()[(height-row-1)*3*width], linebytes);
+    // check the index here, and figure out why not using h*linebytes
+    if (TIFFWriteScanline(out, buf, row, 0) < 0)
+      break;
+  }
+  TIFFClose(out);
+
+  qDebug() << ".tiff file saved";
+
 }
 
 RawProcessor::~RawProcessor() {
-  if (currentImage) {
-    delete currentImage;
-    iProcessor.recycle();
-  }
 }

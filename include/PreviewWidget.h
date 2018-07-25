@@ -65,6 +65,7 @@ private:
   QString display_gamma;
 
   void rotate_camera();
+  void reset_camera();
 
 protected:
   void initializeGL();

@@ -9,24 +9,26 @@ uniform bool grayscale;
 uniform bool invert;
 
 void main() {
-  float eps = 1e-8;
+  float eps = 1e-4;
   vec3 negative = 1.0*texture2D(texture, texcoord).xyz;
 
   // vec3 wp_corrected = (negative) / white_point;
   vec3 wp_corrected = min((negative + eps) / white_point, 1.0);
 
-// maxi: wp / eps
-// mini: wp / 1+eps
+// maxi: 1 / eps
+// mini: 1 / 1+eps
 
   vec3 processed;
   if (invert) {
-    vec3 positive = max(1.0 / wp_corrected - (1.0 + eps) / white_point -  black_point, vec3(0.0));
+    vec3 positive = max(1.0 / wp_corrected - 1.0 - black_point, vec3(0.0));
+    // vec3 film_gamma = pow(positive, gamma);
     vec3 film_gamma = pow(positive, 1.0 / gamma);
     processed = exposure*(film_gamma);
   } else {
     processed = exposure*(wp_corrected - black_point);
   }
 
+  // vec3 gamma_corrected = pow(processed, vec3(output_gamma));
   vec3 gamma_corrected = pow(processed, vec3(1.0/output_gamma));
 
 

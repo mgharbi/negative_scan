@@ -31,6 +31,7 @@ public slots:
 signals:
   void updateImage(unsigned short *imdata, unsigned long w, unsigned long h,
                    float* camera_rgb);
+  void updateHistogram(const float *data, const int);
 
 private:
   Timer timer;

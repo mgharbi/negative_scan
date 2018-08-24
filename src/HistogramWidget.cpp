@@ -13,44 +13,22 @@
 
 HistogramWidget::HistogramWidget(QWidget *parent) :
   QGraphicsView(parent),
-  min(0), max(1), black_point(0.1), white_point(0.5), selected(false)
+  /*min(0), max(1)*/
+  black_point(0.1), white_point(0.5), selected(false)
 {
-  counts = std::vector<float>(1, 0.0);
-  max_count = 1.0;
+  // counts = std::vector<float>(255, 0.0);
+  // max_count = 1.0;
   // counts[0] = 0.2;
   // counts[1] = 0.7;
   // counts[2] = 0.1;
   // counts[3] = 0.5;
   // counts[4] = 0.2;
   // counts[5] = 0.8;
+  // counts[254] = 0.8;
   // max_count = 1.0;
 
   setMouseTracking(true);
 
-  QGraphicsScene *scene = new QGraphicsScene(0, 0, 512, 256);
-  setScene(scene);
-
-  scene->setBackgroundBrush(QBrush(QColor(60, 60, 60)));
-
-  QBrush brush(QColor(255, 0, 0));
-  int w = scene->width();
-  int h = scene->height();
-  qDebug() << w << " " << h;
-
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-  int n = counts.size();
-  float step = w*1.0/n;
-
-  for(int i = 0; i < counts.size(); ++i) {
-    float height = (counts[i]/max_count) * h;
-    scene->addRect(i*step, h-height, std::ceil(step), height, Qt::NoPen, brush);
-  }
-  
-  QPen pen(Qt::white, 2);
-  white_line = scene->addLine(white_pos(), 0, white_pos(), h, pen);
-  white_label = scene->addText(QString::number(white_point));
 }
 
 HistogramWidget::~HistogramWidget() {
@@ -106,5 +84,37 @@ void HistogramWidget::resizeEvent(QResizeEvent *event) {
   fitInView(this->sceneRect());
 }
 
-void HistogramWidget::updateHistogram() {
+void HistogramWidget::setData(const float* data, int nbins) {
+  qDebug() << "Updating histogram data";
+
+  QGraphicsScene *scene = new QGraphicsScene(0, 0, 512, 256);
+  setScene(scene);
+
+  scene->setBackgroundBrush(QBrush(QColor(60, 60, 60)));
+
+  QBrush brush(QColor(255, 0, 0));
+  int w = scene->width();
+  int h = scene->height();
+  qDebug() << w << " " << h;
+
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  float step = w*1.0/nbins;
+
+  qDebug() << "histogram with" << nbins << "bins";
+  float maxi = 0.0;
+  for(int i = 0; i < nbins; ++i) {
+    float height = (data[3*i]/4000.0) * h;
+    maxi = fmax(maxi, data[3*i]);
+    scene->addRect(i*step, h-height, std::ceil(step), height, Qt::NoPen, brush);
+  }
+
+  qDebug() << "histogram max" << maxi;
+
+  fitInView(this->sceneRect());
+  
+  QPen pen(Qt::white, 2);
+  white_line = scene->addLine(white_pos(), 0, white_pos(), h, pen);
+  white_label = scene->addText(QString::number(white_point));
 }

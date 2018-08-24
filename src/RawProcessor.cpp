@@ -145,10 +145,12 @@ void RawProcessor::load(QString filename) {
 
   // NOTE: libraw already computes an histogram
   timer.reset();
-  int nbins = 256;
+  int nbins = 512;
   Buffer<float> hist(3, nbins);
   histogram(preview, nbins, hist);
   qDebug() << "HL: computed histograms in " << timer.elapsed() << "ms";
+
+  emit updateHistogram(hist.data(), nbins);
 
   // timer.reset();
   // Buffer<float> min_(3);

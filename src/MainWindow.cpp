@@ -44,17 +44,23 @@ MainWindow::MainWindow() {
       raw_processor, 
       &RawProcessor::save);
 
-  // QWidget *histograms_widget = new QWidget();
-  // QHBoxLayout *layout = new QHBoxLayout(histograms_widget);
-  // histograms[0] = new HistogramWidget(this);
+  QWidget *histograms_widget = new QWidget();
+  QHBoxLayout *layout = new QHBoxLayout(histograms_widget);
+  histograms[0] = new HistogramWidget(this);
   // histograms[1] = new HistogramWidget(this);
   // histograms[2] = new HistogramWidget(this);
-  // layout->addWidget(histograms[0]);
+  layout->addWidget(histograms[0]);
   // layout->addWidget(histograms[1]);
   // layout->addWidget(histograms[2]);
-  // QDockWidget *tools = new QDockWidget(tr("tools"), this);
-  // tools->setWidget(histograms_widget);
-  // addDockWidget(Qt::TopDockWidgetArea, tools);
+  QDockWidget *tools = new QDockWidget(tr("tools"), this);
+  tools->setWidget(histograms_widget);
+  addDockWidget(Qt::TopDockWidgetArea, tools);
+
+  QObject::connect(
+      raw_processor,
+      &RawProcessor::updateHistogram,
+      histograms[0], 
+      &HistogramWidget::setData);
 
   setWindowTitle("Negative Scan");
   

@@ -13,7 +13,7 @@ signals:
   void blackPointChanged(float value);
 
 public slots:
-  void updateHistogram();
+  void setData(const float* data, int nbins);
 
 public:
   HistogramWidget(QWidget *parent=nullptr);
@@ -39,12 +39,12 @@ private:
   // UI behavior
   bool selected;
 
-  float min;
-  float max;
+  // float min;
+  // float max;
   
   // Data
-  std::vector<float> counts;
-  float max_count;
+  // std::vector<float> counts;
+  // float max_count;
   float white_point;
   float black_point;
 

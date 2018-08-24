@@ -11,17 +11,19 @@
 #include <QShowEvent>
 
 
-HistogramWidget::HistogramWidget() :
+HistogramWidget::HistogramWidget(QWidget *parent) :
+  QGraphicsView(parent),
   min(0), max(1), black_point(0.1), white_point(0.5), selected(false)
 {
-  counts = std::vector<float>(10, 0.3);
-  counts[0] = 0.2;
-  counts[1] = 0.7;
-  counts[2] = 0.1;
-  counts[3] = 0.5;
-  counts[4] = 0.2;
-  counts[5] = 0.8;
+  counts = std::vector<float>(1, 0.0);
   max_count = 1.0;
+  // counts[0] = 0.2;
+  // counts[1] = 0.7;
+  // counts[2] = 0.1;
+  // counts[3] = 0.5;
+  // counts[4] = 0.2;
+  // counts[5] = 0.8;
+  // max_count = 1.0;
 
   setMouseTracking(true);
 

@@ -6,7 +6,7 @@ using Halide::Generator;
 using Halide::Var;
 using Halide::Func;
 
-class SubsamplerGenerator : public Generator<SubsamplerGenerator> {
+class SubsampleGenerator : public Generator<SubsampleGenerator> {
 public:
     Input<Buffer<uint16_t>> input{"data", 3};
     Input<int> width{"width"};
@@ -28,6 +28,8 @@ public:
     void schedule() {
         Var x("x"), y("y"), c("c");
         output
+            .bound(c, 0, 3)
+            .unroll(c, 3)
             .parallel(y, 8)
             .vectorize(x, 8);
     }
@@ -37,4 +39,4 @@ public:
 }  // end namespace negascan
 
 HALIDE_REGISTER_GENERATOR(
-        negascan::SubsamplerGenerator, subsampler)
+        negascan::SubsampleGenerator, subsample)

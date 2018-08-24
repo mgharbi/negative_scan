@@ -9,6 +9,7 @@
 #include <QList>
 
 #include "ControlData.h"
+#include "RGBControls.h"
 
 class ControlsWidget : public QWidget
 {
@@ -28,6 +29,9 @@ public:
 public slots:
   void imageChanged();
   void selectPreset(int index);
+  void whitePointChanged(int idx, float value);
+  void blackPointChanged(int idx, float value);
+  void gammaChanged(int idx, float value);
 
 signals:
   void updateControlData(ControlData data);
@@ -38,28 +42,29 @@ private:
   void reset();
   void setPresets();
 
+  void setupInterface();
+  void connectControls();
+
   QList<ControlData> presets;
   ControlData data;
-
-  int wp_steps;
-  int gamma_steps;
 
   // UI
   QComboBox *presets_list;
   QCheckBox *grayscale_button;
   QCheckBox *invert_button;
 
-  QLabel *wp_header_label;
+  RGBControls* wp;
+  RGBControls* bp;
+  RGBControls* gamma;
+
   QSlider *wp_sliders[3];
   QLabel *wp_labels[3];
 
-  QLabel *gamma_header_label;
   QSlider *gamma_sliders[3];
   QLabel *gamma_labels[3];
 
   QSlider *exposure_slider;
   QSlider *out_gamma_slider;
-  QSlider *bp_slider;
 
   QPushButton *load_button;
   QPushButton *save_button;

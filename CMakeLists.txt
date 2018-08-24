@@ -38,6 +38,7 @@ qt5_wrap_cpp(WRAPPED_HEADERS
   include/PreviewWidget.h
   include/ControlsWidget.h
   include/RawProcessor.h
+  include/RGBControls.h
 )
 
 qt5_add_resources(RESOURCES
@@ -50,18 +51,23 @@ set(SOURCES
  src/main.cpp
  src/MainWindow.cpp
  src/ControlsWidget.cpp
+ src/RGBControls.cpp
  src/PreviewWidget.cpp
  src/RawProcessor.cpp
  src/HistogramWidget.cpp
 )
 
-halide_library(subsampler SRCS src/hl/subsampler_generator.cpp)
+halide_library(subsample SRCS src/hl/subsample.cpp)
+halide_library(histogram SRCS src/hl/histogram.cpp)
+halide_library(minmax SRCS src/hl/minmax.cpp)
 halide_library(invert_negative SRCS src/hl/invert_negative.cpp)
 halide_library(invert_negative_bw SRCS src/hl/invert_negative.cpp
                GENERATOR_ARGS bw=true
                GENERATOR_NAME invert_negative)
 set(NEGASCAN_HL_LIBS
-  subsampler
+  subsample
+  histogram
+  minmax
   invert_negative
   invert_negative_bw
 )

@@ -34,7 +34,7 @@ public:
   
 public slots:
   void controlDataChanged(ControlData cdata);
-  void imageChanged(unsigned short* imdata, unsigned long w, unsigned long h);
+  void imageChanged(unsigned short* imdata, unsigned long w, unsigned long h, float* camera_rgb);
 
 private:
   QOpenGLTexture *texture;
@@ -45,11 +45,12 @@ private:
   int m_projLoc;
   int m_gammaLoc;
   int m_wpLoc;
-  int m_exposureLoc;
   int m_bpLoc;
+  int m_exposureLoc;
   int m_outGammaLoc;
   int m_grayscaleLoc;
   int m_invertLoc;
+  int m_cameraRGBLoc;
 
   // Camera transform
   QMatrix4x4 image_ratio;

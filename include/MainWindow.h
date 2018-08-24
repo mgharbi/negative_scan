@@ -17,7 +17,7 @@ public:
 
 private:
   PreviewWidget *preview;
-  HistogramWidget *histogram;
+  HistogramWidget *histograms[3];
   // QDockWidget *tools;
   ControlsWidget* controls;
   RawProcessor *raw_processor;

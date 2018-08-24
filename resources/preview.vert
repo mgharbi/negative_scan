@@ -1,3 +1,4 @@
+#version 120
 attribute vec3 vertex;
 attribute vec2 vert_texcoord;
 varying vec2 texcoord;

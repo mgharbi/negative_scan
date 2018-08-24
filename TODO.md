@@ -1,7 +1,11 @@
 - Save state / presets
-- Bidirectional link slider / value
+- Bidirectional linked slider-value
 - Histograms
-- Pipette-style black pt / wp
-- crop / rotate
 - Batch process
-- multiple images
+  - multiple images
+- Output path selector
+- Add toolbar: 
+  - rotate left/right
+  - wp pipette
+  - white-balance pipette
+  - crop

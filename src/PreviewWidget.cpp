@@ -7,6 +7,7 @@
 #include <QOpenGLDebugLogger>
 #include <QOpenGLTexture>
 #include <QVector>
+#include <QGenericMatrix>
 #include <QVector3D>
 #include <QtDebug>
 #include <QPainter>
@@ -15,6 +16,11 @@
 
 PreviewWidget::PreviewWidget(QWidget *parent)
   : QOpenGLWidget(parent){
+
+    // QSurfaceFormat format;
+    // format.setVersion(3,3);
+    // format.setProfile(QSurfaceFormat::CoreProfile);
+    // setFormat(format);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
 
@@ -48,9 +54,6 @@ void PreviewWidget::reset_camera () {
 void PreviewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  qDebug() << "OpenGL " << context()->format().majorVersion() << "."
-    << context()->format().minorVersion();
-
   program = new QOpenGLShaderProgram;
   program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":preview.vert");
   program->addShaderFromSourceFile(QOpenGLShader::Fragment, ":preview.frag");
@@ -62,20 +65,22 @@ void PreviewWidget::initializeGL() {
   program->setUniformValue("texture", 0);
   m_gammaLoc = program->uniformLocation("gamma");
   m_wpLoc = program->uniformLocation("white_point");
-  m_exposureLoc = program->uniformLocation("exposure");
   m_bpLoc = program->uniformLocation("black_point");
+  m_exposureLoc = program->uniformLocation("exposure");
   m_outGammaLoc = program->uniformLocation("output_gamma");
   m_grayscaleLoc = program->uniformLocation("grayscale");
   m_invertLoc = program->uniformLocation("invert");
   m_projLoc = program->uniformLocation("proj_mtx");
+  m_cameraRGBLoc = program->uniformLocation("cameraRGB");
 
   program->setUniformValue(m_gammaLoc, QVector3D(1, 1, 1));
   program->setUniformValue(m_wpLoc, QVector3D(1, 1, 1));
+  program->setUniformValue(m_bpLoc, QVector3D(1, 1, 1));
   program->setUniformValue(m_exposureLoc, 1.0f);
-  program->setUniformValue(m_bpLoc, 0.0f);
   program->setUniformValue(m_outGammaLoc, 1.0f);
   program->setUniformValue(m_grayscaleLoc, false);
   program->setUniformValue(m_invertLoc, true);
+  program->setUniformValue(m_cameraRGBLoc, QMatrix3x3());
 
   QMatrix4x4 m;
   m.setToIdentity();
@@ -135,10 +140,6 @@ void PreviewWidget::setupVertexAttribs()
 
 void PreviewWidget::paintGL()
 {
-  QMatrix4x4 model;
-  model.setToIdentity();
-  model.translate(0, 0, -1);  // Translate scene in camera's fulcrum
-
   QMatrix4x4 scale_mtx;
   scale_mtx.scale(scale, scale, 1);
 
@@ -154,7 +155,7 @@ void PreviewWidget::paintGL()
 
   program->bind();
 
-  program->setUniformValue(m_projLoc, projection*translation*scale_mtx*rotation*model*image_ratio);
+  program->setUniformValue(m_projLoc, projection*translation*scale_mtx*rotation*image_ratio);
 
   if (texture) {
     QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
@@ -199,7 +200,6 @@ void PreviewWidget::resizeGL(int w, int h)
   qreal width = height * aspect;
 
   // Set perspective projection
-  const qreal zNear = 0.1, zFar = 3.0, fov = 45.0;
   projection.ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 10.0f);
 }
 
@@ -207,8 +207,8 @@ void PreviewWidget::controlDataChanged(ControlData cdata) {
   program->bind();
   program->setUniformValue(m_gammaLoc, QVector3D(cdata.gamma[0], cdata.gamma[1], cdata.gamma[2]));
   program->setUniformValue(m_wpLoc, QVector3D(cdata.wp[0], cdata.wp[1], cdata.wp[2]));
+  program->setUniformValue(m_bpLoc, QVector3D(cdata.bp[0], cdata.bp[1], cdata.bp[2]));
   program->setUniformValue(m_exposureLoc, cdata.exposure);
-  program->setUniformValue(m_bpLoc, cdata.bp);
   program->setUniformValue(m_outGammaLoc, cdata.output_gamma);
   program->setUniformValue(m_grayscaleLoc, cdata.grayscale);
   program->setUniformValue(m_invertLoc, cdata.invert);
@@ -219,19 +219,30 @@ void PreviewWidget::controlDataChanged(ControlData cdata) {
   update();
 }
 
-void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsigned long h) {
+void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsigned long h, float* camera_rgb) {
   if (!context()) {
     return;
   }
 
   makeCurrent();
+
+  float mat3[3*3];
+  for (int i = 0; i < 3; ++i)
+  for (int j = 0; j < 3; ++j) {
+    mat3[3*i + j] = camera_rgb[4*i + j];
+  }
+  QMatrix3x3 m(mat3);
+  qDebug() << "changing rgb matrix" <<m ;
+
+  program->bind();
+  program->setUniformValue(m_cameraRGBLoc, m);
+  program->release();
+
   if (texture) {
-    qDebug() << "Deleting old texture";
     delete texture;
     texture = nullptr;
   }
 
-  qDebug() << "Setting new texture";
   QOpenGLTexture::PixelType pixType = QOpenGLTexture::UInt16;
   QOpenGLTexture::PixelFormat pixFormat = QOpenGLTexture::RGB;
   QOpenGLTexture::TextureFormat texFormat = QOpenGLTexture::RGB16_UNorm;
@@ -261,6 +272,23 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
 
 void PreviewWidget::mousePressEvent(QMouseEvent *e) {
   mousePreviousPosition = QVector2D(e->localPos());
+
+  QMatrix4x4 scale_mtx;
+  scale_mtx.scale(scale, scale, 1);
+
+  QMatrix4x4 mtx =
+    projection*translation*scale_mtx*rotation*image_ratio;
+
+  QVector3D forwd_bl = mtx.map(QVector3D(0.0, 0.0, 0));
+  QVector3D forwd_tr = mtx.map(QVector3D(1.0, 1.0, 0));
+
+
+  QMatrix4x4 mtx_i = mtx.inverted();
+
+  QSize sz = size();
+  QVector3D screen_coord(2.0*e->localPos().x() / sz.width() - 1.0, - 2.0 * e->localPos().y() / sz.height() + 1.0, 0);
+  // QVector3D screen_coord(e->localPos().x() / sz.width() - 0.5f, e->localPos().y() / sz.height() - 0.5f, -1);
+  QVector3D quad_coord = mtx_i.map(screen_coord);
 }
 
 void PreviewWidget::mouseMoveEvent(QMouseEvent *e) {

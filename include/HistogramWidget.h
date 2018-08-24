@@ -16,7 +16,7 @@ public slots:
   void updateHistogram();
 
 public:
-  HistogramWidget();
+  HistogramWidget(QWidget *parent=nullptr);
   virtual ~HistogramWidget ();
 
   // TODO: signals for level change

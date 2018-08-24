@@ -239,19 +239,30 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
   program->release();
 
   if (texture) {
-    delete texture;
-    texture = nullptr;
+    qDebug() << "already has texture" << texture;
+    // texture->release();
+    texture->destroy();
+    // delete texture;
+    // texture = nullptr;
   }
 
+  qDebug() << "uploading texture";
   QOpenGLTexture::PixelType pixType = QOpenGLTexture::UInt16;
-  QOpenGLTexture::PixelFormat pixFormat = QOpenGLTexture::RGB;
   QOpenGLTexture::TextureFormat texFormat = QOpenGLTexture::RGB16_UNorm;
-  texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+  QOpenGLTexture::PixelFormat pixFormat = QOpenGLTexture::RGB;
+  qDebug() << "creating texture";
+  // texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
   texture->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
   texture->setSize(w, h);
   texture->setFormat(texFormat);
+  qDebug() << "new texture";
+  qDebug() << "allocating storage";
   texture->allocateStorage();
+  qDebug() << "allocated storage";
   texture->setData(pixFormat, pixType, (void*) imdata);
+  qDebug() << "uploaded texture";
+  texture->create();
+  qDebug() << "created texture";
 
   GLenum glErr = GL_NO_ERROR;
   while((glErr = glGetError()) != GL_NO_ERROR) {
@@ -266,6 +277,7 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
     image_ratio.scale(aspect, 1.0);
   }
 
+  qDebug() << "";
   doneCurrent();
   update();
 }

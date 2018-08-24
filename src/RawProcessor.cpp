@@ -129,10 +129,10 @@ void RawProcessor::load(QString filename) {
   float aspect = ((float) w) / h;
   int preview_w = 0, preview_h = 0;
   if ( w > h ) {
-    preview_w = 1024;
+    preview_w = 512;
     preview_h = preview_w / aspect;
   } else {
-    preview_h = 1024;
+    preview_h = 512;
     preview_w = preview_h * aspect;
   }
 
@@ -150,20 +150,20 @@ void RawProcessor::load(QString filename) {
   histogram(preview, nbins, hist);
   qDebug() << "HL: computed histograms in " << timer.elapsed() << "ms";
 
-  timer.reset();
-  Buffer<float> min_(3);
-  Buffer<float> max_(3);
-  Buffer<float> rgb_buf(camera_rgb, 4,3);
-  minmax(preview, rgb_buf, min_, max_);
-  qDebug() << "HL: computed min/max in " << timer.elapsed() << "ms";
-
-  for (int i = 0; i < 3; ++i) {
-    qDebug() << "range" << i << "[" << min_.data()[i] << max_.data()[i] <<"]";
-  }
-
-  for (int i = 0; i < 3; ++i) {
-    qDebug() << "range(inv)" << i << "[" << 1.0f/max_.data()[i] << 1.0f/min_.data()[i] <<"]";
-  }
+  // timer.reset();
+  // Buffer<float> min_(3);
+  // Buffer<float> max_(3);
+  // Buffer<float> rgb_buf(camera_rgb, 4,3);
+  // minmax(preview, rgb_buf, min_, max_);
+  // qDebug() << "HL: computed min/max in " << timer.elapsed() << "ms";
+  //
+  // for (int i = 0; i < 3; ++i) {
+  //   qDebug() << "range" << i << "[" << min_.data()[i] << max_.data()[i] <<"]";
+  // }
+  //
+  // for (int i = 0; i < 3; ++i) {
+  //   qDebug() << "range(inv)" << i << "[" << 1.0f/max_.data()[i] << 1.0f/min_.data()[i] <<"]";
+  // }
 }
 
 void RawProcessor::save(ControlData data) {

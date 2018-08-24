@@ -9,40 +9,40 @@ MainWindow::MainWindow() {
 
   raw_processor = new RawProcessor();
 
-  // preview = new PreviewWidget(this);
-  // setCentralWidget(preview);
-  //
-  // QDockWidget *dock = new QDockWidget("controls", this);
-  // controls = new ControlsWidget(dock);
-  // dock->setWidget(controls);
-  // addDockWidget(Qt::RightDockWidgetArea, dock);
-  //
-  // QObject::connect(controls, 
-  //     &ControlsWidget::updateControlData,
-  //     preview,
-  //     &PreviewWidget::controlDataChanged);
-  //
-  // QObject::connect(raw_processor, 
-  //     &RawProcessor::updateImage,
-  //     preview,
-  //     &PreviewWidget::imageChanged);
-  //
-  // QObject::connect(raw_processor, 
-  //     &RawProcessor::updateImage,
-  //     controls,
-  //     &ControlsWidget::imageChanged);
-  //
-  // QObject::connect(
-  //     controls,
-  //     &ControlsWidget::requestImage,
-  //     raw_processor, 
-  //     &RawProcessor::load);
-  //
-  // QObject::connect(
-  //     controls,
-  //     &ControlsWidget::requestSave,
-  //     raw_processor, 
-  //     &RawProcessor::save);
+  preview = new PreviewWidget(this);
+  setCentralWidget(preview);
+
+  QDockWidget *dock = new QDockWidget("controls", this);
+  controls = new ControlsWidget(dock);
+  dock->setWidget(controls);
+  addDockWidget(Qt::RightDockWidgetArea, dock);
+
+  QObject::connect(controls, 
+      &ControlsWidget::updateControlData,
+      preview,
+      &PreviewWidget::controlDataChanged);
+
+  QObject::connect(raw_processor, 
+      &RawProcessor::updateImage,
+      preview,
+      &PreviewWidget::imageChanged);
+
+  QObject::connect(raw_processor, 
+      &RawProcessor::updateImage,
+      controls,
+      &ControlsWidget::imageChanged);
+
+  QObject::connect(
+      controls,
+      &ControlsWidget::requestImage,
+      raw_processor, 
+      &RawProcessor::load);
+
+  QObject::connect(
+      controls,
+      &ControlsWidget::requestSave,
+      raw_processor, 
+      &RawProcessor::save);
 
   // QWidget *histograms_widget = new QWidget();
   // QHBoxLayout *layout = new QHBoxLayout(histograms_widget);
@@ -60,7 +60,7 @@ MainWindow::MainWindow() {
   
   // TODO: autoload an image for debug
   // emit controls->requestImage("/Users/mgharbi/projects/negascan/data/shuglo.CR2");
-  raw_processor->load("/Users/mgharbi/projects/negascan/data/shuglo.CR2");
+  // raw_processor->load("/Users/mgharbi/projects/negascan/data/shuglo.CR2");
 }
 
 MainWindow::~MainWindow() {

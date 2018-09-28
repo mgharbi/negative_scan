@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QColor>
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsLineItem>
@@ -16,7 +17,7 @@ public slots:
   void setData(const float* data, int nbins);
 
 public:
-  HistogramWidget(QWidget *parent=nullptr);
+  HistogramWidget(int channel, QColor color, QWidget *parent=nullptr);
   virtual ~HistogramWidget ();
 
   // TODO: signals for level change
@@ -31,6 +32,9 @@ protected:
   void sceneRectChanged(const QRectF &rect);
 
 private:
+  int channel;
+  QColor color;
+
   // UI
   QGraphicsLineItem* white_line;
   QGraphicsLineItem* black_line;

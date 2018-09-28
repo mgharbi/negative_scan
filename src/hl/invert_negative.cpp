@@ -29,7 +29,8 @@ public:
         RDom rchan(0, 3);
         Func rgb("rgb");
         rgb(c, x, y) = 0.0f;
-        rgb(c, x, y) += camera_rgb(rchan, c)*input_f(rchan, x, y);
+        // rgb(c, x, y) += camera_rgb(rchan, c)*input_f(rchan, x, y);
+        // rgb(c, x, y) = input_f(c, x, y);
 
         Func inverted("inverted");
         inverted(c, x, y) = 1.0f /  max(rgb(c, x, y),  eps);;

@@ -147,7 +147,8 @@ void RawProcessor::load(QString filename) {
   timer.reset();
   int nbins = 512;
   Buffer<float> hist(3, nbins);
-  histogram(preview, nbins, hist);
+  Buffer<float> rgb_buf(camera_rgb, 4,3);
+  histogram(preview, rgb_buf, nbins, hist);
   qDebug() << "HL: computed histograms in " << timer.elapsed() << "ms";
 
   emit updateHistogram(hist.data(), nbins);

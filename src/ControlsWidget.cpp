@@ -32,7 +32,7 @@ void ControlsWidget::setupInterface() {
   invert_button = new QCheckBox("invert", this);
   layout->addWidget(invert_button);
 
-  wp = new RGBControls(0.0, 50.0, 1000, false, "white point");
+  wp = new RGBControls(0.0, 200.0, 1000, false, "white point");
   layout->addWidget(wp);
 
   bp = new RGBControls(0.0, 10.0, 1000, false, "black point");

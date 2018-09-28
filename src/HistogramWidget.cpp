@@ -5,14 +5,13 @@
 #include <QPen>
 #include <QBrush>
 #include <QPainter>
-#include <QColor>
 #include <QMouseEvent>
 #include <QTransform>
 #include <QShowEvent>
 
 
-HistogramWidget::HistogramWidget(QWidget *parent) :
-  QGraphicsView(parent),
+HistogramWidget::HistogramWidget(int channel, QColor color, QWidget *parent) :
+  channel(channel), color(color), QGraphicsView(parent),
   /*min(0), max(1)*/
   black_point(0.1), white_point(0.5), selected(false)
 {
@@ -85,14 +84,12 @@ void HistogramWidget::resizeEvent(QResizeEvent *event) {
 }
 
 void HistogramWidget::setData(const float* data, int nbins) {
-  qDebug() << "Updating histogram data";
-
   QGraphicsScene *scene = new QGraphicsScene(0, 0, 512, 256);
   setScene(scene);
 
   scene->setBackgroundBrush(QBrush(QColor(60, 60, 60)));
 
-  QBrush brush(QColor(255, 0, 0));
+  QBrush brush(color);
   int w = scene->width();
   int h = scene->height();
   qDebug() << w << " " << h;
@@ -105,8 +102,8 @@ void HistogramWidget::setData(const float* data, int nbins) {
   qDebug() << "histogram with" << nbins << "bins";
   float maxi = 0.0;
   for(int i = 0; i < nbins; ++i) {
-    float height = (data[3*i]/4000.0) * h;
-    maxi = fmax(maxi, data[3*i]);
+    float height = (data[3*i + channel]/4000.0) * h;
+    maxi = fmax(maxi, data[3*i + channel]);
     scene->addRect(i*step, h-height, std::ceil(step), height, Qt::NoPen, brush);
   }
 

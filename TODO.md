@@ -1,9 +1,11 @@
 - Save state / presets
 - Bidirectional linked slider-value
 - Histograms
+  - RGB with index
+  - recompute histograms on invert / bw
+- data structure
 - Batch process
   - multiple images
-- Output path selector
 - Add toolbar: 
   - rotate left/right
   - wp pipette

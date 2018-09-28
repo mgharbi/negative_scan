@@ -1,3 +1,4 @@
+#include <QColor>
 #include <QDesktopWidget>
 #include <QHBoxLayout>
 
@@ -46,21 +47,23 @@ MainWindow::MainWindow() {
 
   QWidget *histograms_widget = new QWidget();
   QHBoxLayout *layout = new QHBoxLayout(histograms_widget);
-  histograms[0] = new HistogramWidget(this);
-  // histograms[1] = new HistogramWidget(this);
-  // histograms[2] = new HistogramWidget(this);
+  histograms[0] = new HistogramWidget(0, QColor(255, 60, 60), this);
+  histograms[1] = new HistogramWidget(1, QColor(60, 255, 60), this);
+  histograms[2] = new HistogramWidget(2, QColor(60, 60, 255), this);
   layout->addWidget(histograms[0]);
-  // layout->addWidget(histograms[1]);
-  // layout->addWidget(histograms[2]);
+  layout->addWidget(histograms[1]);
+  layout->addWidget(histograms[2]);
   QDockWidget *tools = new QDockWidget(tr("tools"), this);
   tools->setWidget(histograms_widget);
   addDockWidget(Qt::TopDockWidgetArea, tools);
 
-  QObject::connect(
-      raw_processor,
-      &RawProcessor::updateHistogram,
-      histograms[0], 
-      &HistogramWidget::setData);
+  for (int i = 0; i < 3; ++i) {
+    QObject::connect(
+        raw_processor,
+        &RawProcessor::updateHistogram,
+        histograms[i], 
+        &HistogramWidget::setData);
+  }
 
   setWindowTitle("Negative Scan");
   

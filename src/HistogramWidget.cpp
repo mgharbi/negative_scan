@@ -70,6 +70,7 @@ float HistogramWidget::set_white_pos(int x) {
   if(white_line) {
     white_line->setLine(x, 0, x, h);
   }
+  qDebug() << "set white" << x << white_point;
   return 0.0f;
 }
 

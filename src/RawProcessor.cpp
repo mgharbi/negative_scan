@@ -57,7 +57,7 @@ void RawProcessor::load(QString filename) {
 
   iProcessor.imgdata.params.half_size = true;
 
-  // Linear image
+  // Linear image with minimal processing
   iProcessor.imgdata.params.gamm[0] = 1.0;
   iProcessor.imgdata.params.gamm[1] = 1.0;
   iProcessor.imgdata.params.output_bps = 16;  // 16-bits
@@ -125,7 +125,7 @@ void RawProcessor::load(QString filename) {
   currentImage = new Buffer<uint16_t>(data, 3, w, h);
   qDebug() << "got image with size" << w << "x" << h;
 
-  // Make preview
+  // Set preview size
   float aspect = ((float) w) / h;
   int preview_w = 0, preview_h = 0;
   if ( w > h ) {
@@ -137,6 +137,7 @@ void RawProcessor::load(QString filename) {
   }
 
   timer.reset();
+  // Make preview
   Buffer<uint16_t> preview(3, preview_w, preview_h);
   subsample(*currentImage, preview_w, preview_h, preview);
   qDebug() << "HL: subsampled in" << timer.elapsed() << "ms";
@@ -214,7 +215,6 @@ void RawProcessor::save(ControlData data) {
   qDebug() << "saving";
   write_tiff(*currentImage, "0_input.tiff");
   write_tiff(processed, "1_output.tiff");
-
 }
 
 void RawProcessor::write_tiff(Buffer<uint16_t> &buffer, std::string path) {

@@ -15,6 +15,7 @@ void main() {
   float eps = 1.0 / 65535.0;
 
   vec3 negative = texture2D(texture, texcoord).xyz;
+  // negative = negative*cameraRGB;
   negative = cameraRGB*negative;
   negative = max(negative, 0);
 

@@ -32,11 +32,11 @@ void ControlsWidget::setupInterface() {
   invert_button = new QCheckBox("invert", this);
   layout->addWidget(invert_button);
 
-  wp = new RGBControls(0.0, 200.0, 1000, false, "white point");
-  layout->addWidget(wp);
+  // wp = new RGBControls(0.0, 200.0, 1000, false, "white point");
+  // layout->addWidget(wp);
 
-  bp = new RGBControls(0.0, 10.0, 1000, false, "black point");
-  layout->addWidget(bp);
+  // bp = new RGBControls(0.0, 10.0, 1000, false, "black point");
+  // layout->addWidget(bp);
 
   gamma = new RGBControls(0.0, 3.0, 1000, false, "gamma point");
   layout->addWidget(gamma);
@@ -72,12 +72,12 @@ void ControlsWidget::connectControls() {
   QObject::connect(
       invert_button, &QCheckBox::clicked, 
       this, &ControlsWidget::invertToggle);
-  QObject::connect(
-      wp, &RGBControls::valueUpdated, 
-      this, &ControlsWidget::whitePointChanged);
-  QObject::connect(
-      bp, &RGBControls::valueUpdated, 
-      this, &ControlsWidget::blackPointChanged);
+  // QObject::connect(
+  //     wp, &RGBControls::valueUpdated, 
+  //     this, &ControlsWidget::whitePointChanged);
+  // QObject::connect(
+  //     bp, &RGBControls::valueUpdated, 
+  //     this, &ControlsWidget::blackPointChanged);
   QObject::connect(
       gamma, &RGBControls::valueUpdated, 
       this, &ControlsWidget::gammaChanged);
@@ -100,13 +100,13 @@ void ControlsWidget::connectControls() {
 }
 
 void ControlsWidget::whitePointChanged(int idx, float val) {
-  data.wp[idx] = val;
-  emit updateControlData(data);
+  // data.wp[idx] = val;
+  // emit updateControlData(data);
 }
 
 void ControlsWidget::blackPointChanged(int idx, float val) {
-  data.bp[idx] = val;
-  emit updateControlData(data);
+  // data.bp[idx] = val;
+  // emit updateControlData(data);
 }
 
 void ControlsWidget::gammaChanged(int idx, float val) {
@@ -155,11 +155,11 @@ void ControlsWidget::reset() {
   data = ControlData();
 
   for (int i = 0; i < 3; ++i) {
-    wp->setValue(i, 0.0);
-    wp->setValue(i, 50.0);
-
-    bp->setValue(i, 1.0);
-    bp->setValue(i, 0.0);
+    // wp->setValue(i, 0.0);
+    // wp->setValue(i, 50.0);
+    //
+    // bp->setValue(i, 1.0);
+    // bp->setValue(i, 0.0);
 
     gamma->setValue(i, 0.0);
     gamma->setValue(i, 1.0);

@@ -31,6 +31,9 @@ public:
   void mouseDoubleClickEvent(QMouseEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
   void wheelEvent(QWheelEvent *e);
+
+signals:
+  void pickWhitePoint(float x, float y);
   
 public slots:
   void controlDataChanged(ControlData cdata);

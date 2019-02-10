@@ -13,7 +13,7 @@
 HistogramWidget::HistogramWidget(int channel, QColor color, QWidget *parent) :
   channel(channel), color(color), QGraphicsView(parent),
   /*min(0), max(1)*/
-  black_point(0.1), white_point(0.5), selected(false)
+  black_point(0.0), white_point(1.0), selected(false)
 {
   // counts = std::vector<float>(255, 0.0);
   // max_count = 1.0;
@@ -27,7 +27,6 @@ HistogramWidget::HistogramWidget(int channel, QColor color, QWidget *parent) :
   // max_count = 1.0;
 
   setMouseTracking(true);
-
 }
 
 HistogramWidget::~HistogramWidget() {
@@ -62,7 +61,7 @@ void HistogramWidget::mouseMoveEvent(QMouseEvent* event) {
   }
 }
 
-float HistogramWidget::set_white_pos(int x) { 
+void HistogramWidget::set_white_pos(int x) { 
   int w = scene()->width();
   int h = scene()->height();
   x = std::max(std::min(x, w-1), 0);
@@ -70,8 +69,7 @@ float HistogramWidget::set_white_pos(int x) {
   if(white_line) {
     white_line->setLine(x, 0, x, h);
   }
-  qDebug() << "set white" << x << white_point;
-  return 0.0f;
+  emit whitePointChanged(white_point, channel);
 }
 
 void HistogramWidget::sceneRectChanged(const QRectF &rect) {
@@ -93,14 +91,12 @@ void HistogramWidget::setData(const float* data, int nbins) {
   QBrush brush(color);
   int w = scene->width();
   int h = scene->height();
-  qDebug() << w << " " << h;
 
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   float step = w*1.0/nbins;
 
-  qDebug() << "histogram with" << nbins << "bins";
   float maxi = 0.0;
   for(int i = 0; i < nbins; ++i) {
     float height = (data[3*i + channel]/4000.0) * h;
@@ -108,11 +104,16 @@ void HistogramWidget::setData(const float* data, int nbins) {
     scene->addRect(i*step, h-height, std::ceil(step), height, Qt::NoPen, brush);
   }
 
-  qDebug() << "histogram max" << maxi;
 
   fitInView(this->sceneRect());
   
   QPen pen(Qt::white, 2);
   white_line = scene->addLine(white_pos(), 0, white_pos(), h, pen);
   white_label = scene->addText(QString::number(white_point));
+}
+
+void HistogramWidget::setWhitePoint(float wp, int chan) {
+  if (chan == channel) {
+    set_white_pos(wp*scene()->width());
+  }
 }

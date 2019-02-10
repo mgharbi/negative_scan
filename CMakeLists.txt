@@ -39,6 +39,7 @@ qt5_wrap_cpp(WRAPPED_HEADERS
   include/ControlsWidget.h
   include/RawProcessor.h
   include/RGBControls.h
+  include/HistogramWidget.h
 )
 
 qt5_add_resources(RESOURCES

@@ -29,7 +29,7 @@ public:
 public slots:
   void imageChanged();
   void selectPreset(int index);
-  void whitePointChanged(int idx, float value);
+  void whitePointChanged(float value, int channel);
   void blackPointChanged(int idx, float value);
   void gammaChanged(int idx, float value);
 

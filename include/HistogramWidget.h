@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QObject>
 #include <QColor>
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -9,12 +10,16 @@
 
 class HistogramWidget : public QGraphicsView
 {
+
+  Q_OBJECT
+
 signals:
-  void whitePointChanged(float value);
+  void whitePointChanged(float value, int channel);
   void blackPointChanged(float value);
 
 public slots:
   void setData(const float* data, int nbins);
+  void setWhitePoint(float wp, int channel);
 
 public:
   HistogramWidget(int channel, QColor color, QWidget *parent=nullptr);
@@ -53,5 +58,5 @@ private:
   float black_point;
 
   float white_pos() {return width()*white_point; }
-  float set_white_pos(int x);
+  void set_white_pos(int x);
 };

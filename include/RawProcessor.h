@@ -27,11 +27,13 @@ public:
 public slots:
   void load(QString filename);
   void save(ControlData data);
+  void whitePointPicked(float x, float y);
 
 signals:
-  void updateImage(unsigned short *imdata, unsigned long w, unsigned long h,
+  void updateImage(uint16_t *imdata, unsigned long w, unsigned long h,
                    float* camera_rgb);
   void updateHistogram(const float *data, const int);
+  void setWhitePoint(float wp, int channel);
 
 private:
   Timer timer;

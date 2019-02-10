@@ -99,9 +99,12 @@ void ControlsWidget::connectControls() {
       this, &ControlsWidget::reset);
 }
 
-void ControlsWidget::whitePointChanged(int idx, float val) {
-  // data.wp[idx] = val;
-  // emit updateControlData(data);
+void ControlsWidget::whitePointChanged(float wp, int channel) {
+  if (channel < 0 || channel > 3) {
+    return;
+  }
+  data.wp[channel] = wp;
+  emit updateControlData(data);
 }
 
 void ControlsWidget::blackPointChanged(int idx, float val) {
@@ -175,7 +178,7 @@ void ControlsWidget::reset() {
   out_gamma_slider->setValue(0);
 
   grayscale_button->setChecked(false);
-  invert_button->setChecked(true);
+  invert_button->setChecked(false);
 
   emit updateControlData(data);
 }

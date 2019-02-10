@@ -15,18 +15,27 @@ void main() {
   float eps = 1.0 / 65535.0;
 
   vec3 negative = texture2D(texture, texcoord).xyz;
-  // negative = negative*cameraRGB;
-  negative = cameraRGB*negative;
   negative = max(negative, 0);
 
   vec3 processed;
   if (invert) {
-    vec3 inverted = (1.0/negative);
-    vec3 scaled = clamp(exposure*(inverted-black_point) /
-      (white_point - black_point), 0.0, 1.0);
-    processed = pow(scaled, gamma);
+    // Scale linear data to correct for film mask
+    vec3 mask_correct = negative/white_point;
+
+    // Apply gamma to correct individual channels
+    vec3 film_gamma_corrected = pow(mask_correct, 1.0/gamma);
+
+    // negative -> positive
+    vec3 inverted = (1.0/film_gamma_corrected);
+
+    // white balance (default by multiplying with min / 1% percentile)
+    
+    // density correction: subtract black point and scale to use full range
+    // vec3 scaled = clamp(exposure*(inverted-black_point) /
+    //   (white_point - black_point), 0.0, 1.0);
+    processed = clamp(exposure*(inverted - 1.0), 0.0, 1.0);
   } else {
-    processed = exposure*(negative/white_point - black_point);
+    processed = negative/white_point;
   }
 
   vec3 gamma_corrected = pow(processed, vec3(1.0/output_gamma));

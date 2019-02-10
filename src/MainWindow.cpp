@@ -18,17 +18,20 @@ MainWindow::MainWindow() {
   dock->setWidget(controls);
   addDockWidget(Qt::RightDockWidgetArea, dock);
 
-  QObject::connect(controls, 
+  QObject::connect(
+      controls, 
       &ControlsWidget::updateControlData,
       preview,
       &PreviewWidget::controlDataChanged);
 
-  QObject::connect(raw_processor, 
+  QObject::connect(
+      raw_processor, 
       &RawProcessor::updateImage,
       preview,
       &PreviewWidget::imageChanged);
 
-  QObject::connect(raw_processor, 
+  QObject::connect(
+      raw_processor, 
       &RawProcessor::updateImage,
       controls,
       &ControlsWidget::imageChanged);
@@ -45,6 +48,12 @@ MainWindow::MainWindow() {
       raw_processor, 
       &RawProcessor::save);
 
+  QObject::connect(
+      preview,
+      &PreviewWidget::pickWhitePoint,
+      raw_processor, 
+      &RawProcessor::whitePointPicked);
+
   QWidget *histograms_widget = new QWidget();
   QHBoxLayout *layout = new QHBoxLayout(histograms_widget);
   histograms[0] = new HistogramWidget(0, QColor(255, 60, 60), this);
@@ -57,12 +66,28 @@ MainWindow::MainWindow() {
   tools->setWidget(histograms_widget);
   addDockWidget(Qt::TopDockWidgetArea, tools);
 
+  QObject::connect(
+      raw_processor,
+      &RawProcessor::setWhitePoint,
+      controls, 
+      &ControlsWidget::whitePointChanged);
+
   for (int i = 0; i < 3; ++i) {
     QObject::connect(
         raw_processor,
         &RawProcessor::updateHistogram,
         histograms[i], 
         &HistogramWidget::setData);
+    QObject::connect(
+        raw_processor,
+        &RawProcessor::setWhitePoint,
+        histograms[i], 
+        &HistogramWidget::setWhitePoint);
+    QObject::connect(
+        histograms[i], 
+        &HistogramWidget::whitePointChanged,
+        controls,
+        &ControlsWidget::whitePointChanged);
   }
 
   setWindowTitle("Negative Scan");

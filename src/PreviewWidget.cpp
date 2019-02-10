@@ -232,37 +232,37 @@ void PreviewWidget::imageChanged(unsigned short* imdata, unsigned long w, unsign
     mat3[3*i + j] = camera_rgb[4*i + j];
   }
   QMatrix3x3 m(mat3);
-  qDebug() << "changing rgb matrix" <<m ;
+  // qDebug() << "changing rgb matrix" <<m ;
 
   program->bind();
   program->setUniformValue(m_cameraRGBLoc, m);
   program->release();
 
   if (texture) {
-    qDebug() << "already has texture" << texture;
+    // qDebug() << "already has texture" << texture;
     // texture->release();
     texture->destroy();
     // delete texture;
     // texture = nullptr;
   }
 
-  qDebug() << "uploading texture";
+  // qDebug() << "uploading texture";
   QOpenGLTexture::PixelType pixType = QOpenGLTexture::UInt16;
   QOpenGLTexture::TextureFormat texFormat = QOpenGLTexture::RGB16_UNorm;
   QOpenGLTexture::PixelFormat pixFormat = QOpenGLTexture::RGB;
-  qDebug() << "creating texture";
+  // qDebug() << "creating texture";
   // texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
   texture->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
   texture->setSize(w, h);
   texture->setFormat(texFormat);
-  qDebug() << "new texture";
-  qDebug() << "allocating storage";
+  // qDebug() << "new texture";
+  // qDebug() << "allocating storage";
   texture->allocateStorage();
-  qDebug() << "allocated storage";
+  // qDebug() << "allocated storage";
   texture->setData(pixFormat, pixType, (void*) imdata);
-  qDebug() << "uploaded texture";
+  // qDebug() << "uploaded texture";
   texture->create();
-  qDebug() << "created texture";
+  // qDebug() << "created texture";
 
   GLenum glErr = GL_NO_ERROR;
   while((glErr = glGetError()) != GL_NO_ERROR) {
@@ -301,6 +301,14 @@ void PreviewWidget::mousePressEvent(QMouseEvent *e) {
   QVector3D screen_coord(2.0*e->localPos().x() / sz.width() - 1.0, - 2.0 * e->localPos().y() / sz.height() + 1.0, 0);
   // QVector3D screen_coord(e->localPos().x() / sz.width() - 0.5f, e->localPos().y() / sz.height() - 0.5f, -1);
   QVector3D quad_coord = mtx_i.map(screen_coord);
+
+  // color picker
+  if ((e->button() & Qt::LeftButton) && (e->modifiers() & Qt::AltModifier)) {
+    float x = 0.5f*(quad_coord.x() + 1.0f);
+    float y = 0.5f*(quad_coord.y() + 1.0f);
+    qDebug() << "color pick" << x << "x" << y;
+    emit pickWhitePoint(x, y);
+  }
 }
 
 void PreviewWidget::mouseMoveEvent(QMouseEvent *e) {

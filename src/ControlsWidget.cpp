@@ -10,7 +10,7 @@ ControlsWidget::ControlsWidget(QWidget *parent)
   : QWidget(parent)
 {
   setupInterface();
-  // setPresets();
+  setPresets();
   connectControls();
   reset();
 }
@@ -21,10 +21,10 @@ ControlsWidget::~ControlsWidget() {
 void ControlsWidget::setupInterface() {
   QVBoxLayout *layout = new QVBoxLayout(this);
 
-  // QLabel *presets_label = new QLabel("Presets", this);
-  // layout->addWidget(presets_label);
-  // presets_list = new QComboBox(this);
-  // layout->addWidget(presets_list);
+  QLabel *presets_label = new QLabel("Presets", this);
+  layout->addWidget(presets_label);
+  presets_list = new QComboBox(this);
+  layout->addWidget(presets_list);
 
   grayscale_button = new QCheckBox("b/w", this);
   layout->addWidget(grayscale_button);

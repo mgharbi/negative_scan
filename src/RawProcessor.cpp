@@ -90,7 +90,7 @@ void RawProcessor::load(QString filename) {
   // Set preview size
   float aspect = ((float) w) / h;
   int preview_w = 0, preview_h = 0;
-  int max_sz = 256;
+  int max_sz = 1024;
   if ( w > h ) {
     preview_w = max_sz;
     preview_h = preview_w / aspect;

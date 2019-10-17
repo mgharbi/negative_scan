@@ -7,7 +7,7 @@ using std::vector;
 class ControlData
 {
 public:
-  ControlData() : gamma(3, 1.0f), wp(3, 1.0f), bp(3, 0.0f), exposure(1.0f),
+  ControlData() : gamma(3, 1.0f), wp(3, 1.0f), bp(3, 0.0f), exposure(0.1f),
   output_gamma(2.2f), grayscale(false), invert(false)
   { };
 

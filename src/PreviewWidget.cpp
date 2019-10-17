@@ -203,6 +203,7 @@ void PreviewWidget::resizeGL(int w, int h)
   projection.ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 10.0f);
 }
 
+
 void PreviewWidget::controlDataChanged(ControlData cdata) {
   program->bind();
   program->setUniformValue(m_gammaLoc, QVector3D(cdata.gamma[0], cdata.gamma[1], cdata.gamma[2]));

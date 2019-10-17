@@ -1,5 +1,5 @@
 #include "RawProcessor.h"
-#include <QDebug>
+#include <glog/logging.h>
 
 #include <tiffio.h>
 
@@ -11,14 +11,14 @@
 
 using Halide::Runtime::Buffer;
 
-RawProcessor::RawProcessor() : currentImage(nullptr), currentFilename(nullptr) {
+RawProcessor::RawProcessor() : currentImage(nullptr) {
   iProcessor.set_progress_handler(&libraw_progress_handler, &timer);
   camera_rgb = new float[3*4];
 }
 
-void RawProcessor::load(QString filename) {
-  if(filename.isEmpty()) {
-    qDebug() << "empty filename, aborting load.";
+void RawProcessor::load(std::string filename) {
+  if(filename.c_str()) {
+    LOG(INFO) << "Filename is empty.";
     return;
   }
 
@@ -44,8 +44,8 @@ void RawProcessor::load(QString filename) {
   // iProcessor.imgdata.params.use_auto_wb = true;
 
   timer.reset();
-  if (int open_err = iProcessor.open_file(filename.toStdString().c_str()) != LIBRAW_SUCCESS) {
-    qDebug() << "Error loading" << LibRaw::strerror(open_err);
+  if (int open_err = iProcessor.open_file(filename.c_str()) != LIBRAW_SUCCESS) {
+    LOG(INFO) << "Error loading" << LibRaw::strerror(open_err);
   }
 
   // for (int i = 0; i < 4; ++i) {
@@ -62,11 +62,11 @@ void RawProcessor::load(QString filename) {
 
   // TODO(mgharbi): dcraw error checking
   if (int unpack_err = iProcessor.unpack() != LIBRAW_SUCCESS) { 
-    qDebug() << "Unpacking errored" << LibRaw::strerror(unpack_err);
+    LOG(INFO) << "Unpacking errored" << LibRaw::strerror(unpack_err);
   }
 
   if (int process_err = iProcessor.dcraw_process() != LIBRAW_SUCCESS) {
-    qDebug() << "Raw2Image errored" << LibRaw::strerror(process_err);
+    LOG(INFO) << "Raw2Image errored" << LibRaw::strerror(process_err);
   }
 
   memcpy(camera_rgb, iProcessor.imgdata.color.rgb_cam, 3*4*sizeof(float));
@@ -85,7 +85,7 @@ void RawProcessor::load(QString filename) {
                          // << iProcessor.imgdata.params.camera_profile ;
 
   currentImage = new Buffer<uint16_t>(data, 3, w, h);
-  qDebug() << "got image with size" << w << "x" << h;
+  LOG(INFO) << "got image with size" << w << "x" << h;
 
   // Set preview size
   float aspect = ((float) w) / h;
@@ -98,15 +98,15 @@ void RawProcessor::load(QString filename) {
     preview_h = max_sz;
     preview_w = preview_h * aspect;
   }
-  qDebug() << "preview with size" << preview_w << "x" << preview_h;
+  LOG(INFO) << "preview with size" << preview_w << "x" << preview_h;
 
   timer.reset();
   // Make preview
   Buffer<uint16_t> preview(3, preview_w, preview_h);
   subsample(*currentImage, preview_w, preview_h, preview);
-  qDebug() << "HL: subsampled in" << timer.elapsed() << "ms";
+  LOG(INFO) << "HL: subsampled in" << timer.elapsed() << "ms";
 
-  emit updateImage(preview.data(), preview_w, preview_h, camera_rgb);
+  // emit updateImage(preview.data(), preview_w, preview_h, camera_rgb);
 
   // NOTE: libraw already computes an histogram
   timer.reset();
@@ -117,15 +117,15 @@ void RawProcessor::load(QString filename) {
   // Buffer<float> rgb_buf(camera_rgb, 4,3);
   minmax(preview, min_, max_);
   histogram(preview, nbins, hist);
-  qDebug() << "HL: computed histograms in " << timer.elapsed() << "ms";
+  LOG(INFO) << "HL: computed histograms in " << timer.elapsed() << "ms";
 
-  emit updateHistogram(hist.data(), nbins);
+  // emit updateHistogram(hist.data(), nbins);
 
   timer.reset();
-  qDebug() << "HL: computed min/max in " << timer.elapsed() << "ms";
+  LOG(INFO) << "HL: computed min/max in " << timer.elapsed() << "ms";
 
   for (int i = 0; i < 3; ++i) {
-    qDebug() << "range" << i << "[" << min_.data()[i] << max_.data()[i] <<"]";
+    LOG(INFO) << "range" << i << "[" << min_.data()[i] << max_.data()[i] <<"]";
   }
 
   // for (int i = 0; i < 3; ++i) {
@@ -134,124 +134,127 @@ void RawProcessor::load(QString filename) {
 }
 
 
-void RawProcessor::save(ControlData data) {
-  if (!currentImage) {
-    qDebug() << "no image open, abort";
-    return;
-  }
-  int width = currentImage->dim(1).extent();
-  int height = currentImage->dim(2).extent();
-  Buffer<uint16_t> processed(3, width, height);
-  Buffer<float> rgb_buf(camera_rgb, 4,3);
-  qDebug() << "inverting negative"
-           << "wp" << data.wp[0] 
-                      << data.wp[1]
-                      << data.wp[2]
-           << "bp" << data.bp[0] 
-                      << data.bp[1]
-                      << data.bp[2]
-           << "gamma" << data.gamma[0] 
-                      << data.gamma[1]
-                      << data.gamma[2]
-           << "output gamma" << data.output_gamma;
-  if(data.grayscale) {
-    qDebug() << "gray";
-    invert_negative_bw(
-        *currentImage, 
-        rgb_buf,
-        Buffer<float>(data.gamma.data(), 3),
-        Buffer<float>(data.wp.data(), 3),
-        Buffer<float>(data.bp.data(), 3),
-        data.exposure,
-        data.output_gamma,
-        processed);
-  } else {
-    invert_negative(
-        *currentImage, 
-        rgb_buf,
-        Buffer<float>(data.gamma.data(), 3),
-        Buffer<float>(data.wp.data(), 3),
-        Buffer<float>(data.bp.data(), 3),
-        data.exposure,
-        data.output_gamma,
-        processed);
-  }
-  qDebug() << "saving";
-  write_tiff(*currentImage, "0_input.tiff");
-  write_tiff(processed, "1_output.tiff");
-}
+// void RawProcessor::save(ControlData data) {
+//   if (!currentImage) {
+//     qDebug() << "no image open, abort";
+//     return;
+//   }
+//   int width = currentImage->dim(1).extent();
+//   int height = currentImage->dim(2).extent();
+//   Buffer<uint16_t> processed(3, width, height);
+//   Buffer<float> rgb_buf(camera_rgb, 4,3);
+//   qDebug() << "inverting negative"
+//            << "wp" << data.wp[0] 
+//                       << data.wp[1]
+//                       << data.wp[2]
+//            << "bp" << data.bp[0] 
+//                       << data.bp[1]
+//                       << data.bp[2]
+//            << "gamma" << data.gamma[0] 
+//                       << data.gamma[1]
+//                       << data.gamma[2]
+//            << "output gamma" << data.output_gamma;
+//   if(data.grayscale) {
+//     qDebug() << "gray";
+//     invert_negative_bw(
+//         *currentImage, 
+//         rgb_buf,
+//         Buffer<float>(data.gamma.data(), 3),
+//         Buffer<float>(data.wp.data(), 3),
+//         Buffer<float>(data.bp.data(), 3),
+//         data.exposure,
+//         data.output_gamma,
+//         processed);
+//   } else {
+//     invert_negative(
+//         *currentImage, 
+//         rgb_buf,
+//         Buffer<float>(data.gamma.data(), 3),
+//         Buffer<float>(data.wp.data(), 3),
+//         Buffer<float>(data.bp.data(), 3),
+//         data.exposure,
+//         data.output_gamma,
+//         processed);
+//   }
+//   qDebug() << "saving";
+//   write_tiff(*currentImage, "0_input.tiff");
+//   write_tiff(processed, "1_output.tiff");
+// }
 
 
-void RawProcessor::write_tiff(Buffer<uint16_t> &buffer, std::string path) {
-  int width = buffer.dim(1).extent();
-  int height = buffer.dim(2).extent();
-
-  TIFF *out= TIFFOpen(path.c_str(), "w");
-  TIFFSetField (out, TIFFTAG_IMAGEWIDTH, width);
-  TIFFSetField (out, TIFFTAG_IMAGELENGTH, height);
-  TIFFSetField (out, TIFFTAG_SAMPLESPERPIXEL, 3);
-  TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 16);
-  TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-  TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-  TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-
-  tsize_t linebytes = 3 * width * sizeof(uint16_t);
-  unsigned char *buf = NULL;        
-  //    Allocating memory to store the pixels of current row
-  if (TIFFScanlineSize(out) >= linebytes) {
-    buf =(unsigned char *)_TIFFmalloc(linebytes);
-  }
-  else {
-    buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
-  }
-
-  // We set the strip size of the file to be size of one row of pixels
-  TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, width * 3));
-
-  // Now writing image to the file one strip at a time
-  for (uint32 row = 0; row < height; row++)
-  {
-    memcpy(buf, &buffer.data()[row*3*width], linebytes);
-    if (TIFFWriteScanline(out, buf, row, 0) < 0)
-      break;
-  }
-  TIFFClose(out);
-
-  qDebug() << ".tiff file saved";
-}
+// void RawProcessor::write_tiff(Buffer<uint16_t> &buffer, std::string path) {
+//   int width = buffer.dim(1).extent();
+//   int height = buffer.dim(2).extent();
+//
+//   TIFF *out= TIFFOpen(path.c_str(), "w");
+//   TIFFSetField (out, TIFFTAG_IMAGEWIDTH, width);
+//   TIFFSetField (out, TIFFTAG_IMAGELENGTH, height);
+//   TIFFSetField (out, TIFFTAG_SAMPLESPERPIXEL, 3);
+//   TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 16);
+//   TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+//   TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+//   TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+//
+//   tsize_t linebytes = 3 * width * sizeof(uint16_t);
+//   unsigned char *buf = NULL;        
+//   //    Allocating memory to store the pixels of current row
+//   if (TIFFScanlineSize(out) >= linebytes) {
+//     buf =(unsigned char *)_TIFFmalloc(linebytes);
+//   }
+//   else {
+//     buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
+//   }
+//
+//   // We set the strip size of the file to be size of one row of pixels
+//   TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, width * 3));
+//
+//   // Now writing image to the file one strip at a time
+//   for (uint32 row = 0; row < height; row++)
+//   {
+//     memcpy(buf, &buffer.data()[row*3*width], linebytes);
+//     if (TIFFWriteScanline(out, buf, row, 0) < 0)
+//       break;
+//   }
+//   TIFFClose(out);
+//
+//   qDebug() << ".tiff file saved";
+// }
 
 
 int libraw_progress_handler(void *callback_data,enum LibRaw_progress stage, int
     iteration, int expected) {
   Timer* timer = static_cast<Timer*>(callback_data);
-  qDebug() << "LibRAW stage:" << LibRaw::strprogress(stage)
+  LOG(INFO) << "LibRAW stage:" << LibRaw::strprogress(stage)
            << (iteration+1) << "of" << expected
            << timer->elapsed() << "ms" ;
   timer->reset();
   return 0;
 }
 
-void RawProcessor::whitePointPicked(float x, float y) {
-  if (!currentImage) {
-    qDebug() << "no image, cannot pick white point";
-  }
-  qDebug() << "RAW wp picked at " << x << y;
-  // convert quad to img coordinates
-  int w = currentImage->width();
-  int h = currentImage->height();
-  int x_i = x*w;
-  int y_i = y*h;
-  // sample from image/texture for white point
-  float r = (*currentImage)(0, x_i, y_i) / 65535.0f;
-  float g = (*currentImage)(1, x_i, y_i) / 65535.0f; 
-  float b = (*currentImage)(2, x_i, y_i) / 65535.0f;
-  qDebug() << "wp" << r << g << b;
 
-  // update histograms white point
-  emit setWhitePoint(r, 0);
-  emit setWhitePoint(g, 1);
-  emit setWhitePoint(b, 2);
-}
+// void RawProcessor::whitePointPicked(float x, float y) {
+//   if (!currentImage) {
+//     qDebug() << "no image, cannot pick white point";
+//   }
+//   qDebug() << "RAW wp picked at " << x << y;
+//
+//   // convert quad to img coordinates
+//   int w = currentImage->width();
+//   int h = currentImage->height();
+//   int x_i = x*w;
+//   int y_i = y*h;
+//
+//   // sample from image/texture for white point
+//   float r = (*currentImage)(0, x_i, y_i) / 65535.0f;
+//   float g = (*currentImage)(1, x_i, y_i) / 65535.0f; 
+//   float b = (*currentImage)(2, x_i, y_i) / 65535.0f;
+//   qDebug() << "wp" << r << g << b;
+//
+//   // update histograms white point
+//   emit setWhitePoint(r, 0);
+//   emit setWhitePoint(g, 1);
+//   emit setWhitePoint(b, 2);
+// }
 
 
 RawProcessor::~RawProcessor() {

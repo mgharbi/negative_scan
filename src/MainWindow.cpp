@@ -92,9 +92,12 @@ MainWindow::MainWindow() {
 
   setWindowTitle("Negative Scan");
   
+}
+
+void MainWindow::load_image(QString path) {
   // TODO: autoload an image for debug
-  // emit controls->requestImage("/Users/mgharbi/projects/negascan/data/shuglo.CR2");
-  // raw_processor->load("/Users/mgharbi/projects/negascan/data/shuglo.CR2");
+  emit controls->requestImage(path);
+  // raw_processor->load(path);
 }
 
 MainWindow::~MainWindow() {

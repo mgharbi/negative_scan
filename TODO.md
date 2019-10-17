@@ -1,13 +1,18 @@
-- Save state / presets
 - Bidirectional linked slider-value
 - Histograms
+  - realtime histograms
   - RGB with index
   - recompute histograms on invert / bw
+- whitebalance controls
+- tonecurve
 - data structure
-- Batch process
-  - multiple images
 - Add toolbar: 
   - rotate left/right
   - wp pipette
   - white-balance pipette
   - crop
+- Batch process
+  - multiple images
+- perf. and texture size for image display
+- Save state / presets
+- halide algorithm with gl target

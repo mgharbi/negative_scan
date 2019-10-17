@@ -14,6 +14,8 @@ public:
   MainWindow();
   virtual ~MainWindow ();
 
+  void load_image(QString path);
+
 
 private:
   PreviewWidget *preview;

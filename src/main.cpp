@@ -1,27 +1,16 @@
 #include <iostream>
-#include <QApplication>
-#include <QSurfaceFormat>
-// #include <QResource>
-// #include <QDebug>
-
-#include "MainWindow.h"
+#include <glog/logging.h>
+#include "negascan.h"
 
 int main(int argc, char *argv[])
 {
-  QApplication app(argc, argv);
+    google::InitGoogleLogging(argv[0]);
+    Negascan app(1280, 720, "app");
 
-  // QSurfaceFormat format;
-  // format.setDepthBufferSize(24);
-  // format.setStencilBufferSize(8);
-  // format.setVersion(3, 3);
-  // format.setProfile(QSurfaceFormat::CoreProfile);
-  // QSurfaceFormat::setDefaultFormat(format);
+    std::string test_image_path = "/Users/mgharbi/Pictures/film_tests/robi_guadalupe.CR2";
 
-  MainWindow mw;
-  // bool f = QResource::registerResource(":shaders.qrc");
-  // qDebug() << "res" << f;
+    app.load_image(test_image_path);
 
-  mw.show();
-  return app.exec();
-  // QCoreApplication::set
+    app.run();
+    return 0;
 }

@@ -24,6 +24,7 @@ public:
         Func input_f("input_f");
         input_f(c, x, y) = cast<float>(input(c, x, y)) / 65535.0f;
 
+        // Correct for the film base color
         Func mask_correct("mask_correct");
         mask_correct(c, x, y) = input_f(c, x, y) / wp(c);
 
@@ -35,6 +36,8 @@ public:
 
         Func scaled("scaled");
         scaled(c, x, y) = clamp(exposure * (inverted(c, x, y) - 1.0f), 0.0f, 1.0f);
+
+        // TODO: post inversion white balance
 
         Func corrected("corrected");
         corrected(c, x, y) = pow(scaled(c, x, y), 1.0f/output_gamma);

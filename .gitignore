@@ -7,3 +7,5 @@ equations.pdf
 output
 vendors/**
 film_tests
+.clangd
+imgui.ini

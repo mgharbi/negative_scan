@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project(negascan)
 
 set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
-# set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 # set(LIBRARY_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -25,16 +25,6 @@ set(IMGUI_ROOT ${CMAKE_SOURCE_DIR}/vendors/imgui)
 
 add_subdirectory(src)
 
-# # Libraw
-# find_package(LibRaw REQUIRED)
-# include_directories(${LIBRAW_INCLUDE_DIR})
-# add_definitions(${LIBRAW_DEFINITIONS})
-#
-# find_package(JPEG REQUIRED)
-# find_package(TIFF REQUIRED)
-# find_package(JASPER REQUIRED)
-# find_package(LCMS REQUIRED)
-#
 # include_directories(${TIFF_INCLUDE_DIR})
 #
 # # QT5

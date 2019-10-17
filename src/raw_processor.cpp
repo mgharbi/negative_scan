@@ -1,32 +1,28 @@
-#include "RawProcessor.h"
+#include "raw_processor.h"
 #include <glog/logging.h>
 
 #include <tiffio.h>
 
 #include "subsample.h"
-#include "histogram.h"
 #include "minmax.h"
 #include "invert_negative.h"
 #include "invert_negative_bw.h"
 
 using Halide::Runtime::Buffer;
 
-RawProcessor::RawProcessor() : currentImage(nullptr) {
+RawProcessor::RawProcessor() {
   iProcessor.set_progress_handler(&libraw_progress_handler, &timer);
   camera_rgb = new float[3*4];
 }
 
-void RawProcessor::load(std::string filename) {
-  if(filename.c_str()) {
-    LOG(INFO) << "Filename is empty.";
-    return;
+
+std::shared_ptr<Image> RawProcessor::load(std::string filename) {
+  if(!filename.c_str()) {
+    LOG(INFO) << "Filename is empty: " << filename;
+    return nullptr;
   }
 
-  if (currentImage) {
-    delete[] currentImage->data();
-    delete currentImage;
-    iProcessor.recycle();
-  }
+  iProcessor.recycle();
   memset(camera_rgb, 0.0f, 3*4*sizeof(float));
 
   // TODO: remove, quarter res, no demosaicking
@@ -77,60 +73,21 @@ void RawProcessor::load(std::string filename) {
   int bpp = 0;
   iProcessor.get_mem_image_format(&w, &h, &c, &bpp);
 
-  uint16_t *data = new uint16_t[w*h*c];
-  int err = iProcessor.copy_mem_image(data, w*(bpp/8)*c, 0);
-  // qDebug() << "copy mem err" << LibRaw::strerror(err);
+  std::shared_ptr<Image> im = std::make_shared<Image>(w, h);
+  int err = iProcessor.copy_mem_image(im->data(), w*(bpp/8)*c, 0);
+  iProcessor.recycle();
 
+  if (err) {
+    LOG(ERROR) << "copy mem err" << LibRaw::strerror(err);
+  }
+  return im;
   // qDebug() << "profiles" << iProcessor.imgdata.params.output_profile 
                          // << iProcessor.imgdata.params.camera_profile ;
 
-  currentImage = new Buffer<uint16_t>(data, 3, w, h);
-  LOG(INFO) << "got image with size" << w << "x" << h;
-
-  // Set preview size
-  float aspect = ((float) w) / h;
-  int preview_w = 0, preview_h = 0;
-  int max_sz = 1024;
-  if ( w > h ) {
-    preview_w = max_sz;
-    preview_h = preview_w / aspect;
-  } else {
-    preview_h = max_sz;
-    preview_w = preview_h * aspect;
-  }
-  LOG(INFO) << "preview with size" << preview_w << "x" << preview_h;
-
-  timer.reset();
-  // Make preview
-  Buffer<uint16_t> preview(3, preview_w, preview_h);
-  subsample(*currentImage, preview_w, preview_h, preview);
-  LOG(INFO) << "HL: subsampled in" << timer.elapsed() << "ms";
-
-  // emit updateImage(preview.data(), preview_w, preview_h, camera_rgb);
-
-  // NOTE: libraw already computes an histogram
-  timer.reset();
-  int nbins = 512;
-  Buffer<float> hist(3, nbins);
-  Buffer<float> min_(3);
-  Buffer<float> max_(3);
-  // Buffer<float> rgb_buf(camera_rgb, 4,3);
-  minmax(preview, min_, max_);
-  histogram(preview, nbins, hist);
-  LOG(INFO) << "HL: computed histograms in " << timer.elapsed() << "ms";
-
-  // emit updateHistogram(hist.data(), nbins);
-
-  timer.reset();
-  LOG(INFO) << "HL: computed min/max in " << timer.elapsed() << "ms";
-
-  for (int i = 0; i < 3; ++i) {
-    LOG(INFO) << "range" << i << "[" << min_.data()[i] << max_.data()[i] <<"]";
-  }
-
-  // for (int i = 0; i < 3; ++i) {
-  //   qDebug() << "range(inv)" << i << "[" << 1.0f/max_.data()[i] << 1.0f/min_.data()[i] <<"]";
-  // }
+  // // emit updateImage(preview.data(), preview_w, preview_h, camera_rgb);
+  //
+  // // emit updateHistogram(hist.data(), nbins);
+  //
 }
 
 
@@ -225,8 +182,8 @@ int libraw_progress_handler(void *callback_data,enum LibRaw_progress stage, int
     iteration, int expected) {
   Timer* timer = static_cast<Timer*>(callback_data);
   LOG(INFO) << "LibRAW stage:" << LibRaw::strprogress(stage)
-           << (iteration+1) << "of" << expected
-           << timer->elapsed() << "ms" ;
+           << (iteration+1) << " of " << expected
+           << timer->elapsed() << " ms" ;
   timer->reset();
   return 0;
 }
@@ -258,12 +215,12 @@ int libraw_progress_handler(void *callback_data,enum LibRaw_progress stage, int
 
 
 RawProcessor::~RawProcessor() {
-  if (currentImage) {
-    delete[] currentImage->data();
-    delete currentImage;
-    iProcessor.recycle();
-  }
-  if(camera_rgb) {
-    delete[] camera_rgb;
-  }
+  // if (currentImage) {
+  //   delete[] currentImage->data();
+  //   delete currentImage;
+  //   iProcessor.recycle();
+  // }
+  // if(camera_rgb) {
+  //   delete[] camera_rgb;
+  // }
 }

@@ -30,7 +30,8 @@ set(NEGASCAN_HL_LIBS
 set(SRCS
     main.cpp
     negascan.cpp
-    RawProcessor.cpp
+    raw_processor.cpp
+    image.cpp
 # MainWindow.cpp
 # ControlsWidget.cpp
 # RGBControls.cpp
@@ -38,16 +39,26 @@ set(SRCS
 # HistogramWidget.cpp
 )
 
-add_executable(main ${SRCS})
-target_link_libraries(main 
+# Libraw
+find_package(JPEG REQUIRED)
+find_package(TIFF REQUIRED)
+find_package(JASPER REQUIRED)
+find_package(LCMS REQUIRED)
+find_package(LibRaw REQUIRED)
+include_directories(${LIBRAW_INCLUDE_DIR})
+add_definitions(${LIBRAW_DEFINITIONS})
+
+
+add_executable(negascan ${SRCS})
+target_link_libraries(negascan 
     mgl
     glog::glog
     gflags
-    # ${LIBRAW_LIBRARIES}
+    ${LIBRAW_LIBRARIES}
+    ${JPEG_LIBRARIES}
+    ${TIFF_LIBRARIES}
+    ${JASPER_LIBRARIES}
+    ${LCMS_LIBRARIES}
+    ${LIBRAW_LIBRARIES}
+    ${NEGASCAN_HL_LIBS}
 )
-# target_link_libraries(main ${LIBRAW_LIBRARIES})
-# target_link_libraries(main ${JPEG_LIBRARIES})
-# target_link_libraries(main ${TIFF_LIBRARIES})
-# target_link_libraries(main ${JASPER_LIBRARIES})
-# target_link_libraries(main ${LCMS_LIBRARIES})
-# target_link_libraries(main ${NEGASCAN_HL_LIBS})

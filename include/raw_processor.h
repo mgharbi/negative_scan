@@ -4,6 +4,8 @@
 #include <HalideBuffer.h>
 #include "Timer.h"
 
+#include "image.h"
+
 
 int libraw_progress_handler(void *callback_data,enum LibRaw_progress stage, int
     iteration, int expected);
@@ -17,7 +19,7 @@ public:
   virtual ~RawProcessor ();
 
 // public slots:
-  void load(std::string filename);
+  std::shared_ptr<Image> load(std::string filename);
   // void save(ControlData data);
   // void whitePointPicked(float x, float y);
 
@@ -28,7 +30,7 @@ public:
 
 private:
   Timer timer;
-  Halide::Runtime::Buffer<uint16_t> *currentImage;
+  // Halide::Runtime::Buffer<uint16_t> *currentImage;
   LibRaw iProcessor;
   std::string *currentFilename;
 

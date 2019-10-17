@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 
     std::string test_image_path = "/Users/mgharbi/Pictures/film_tests/robi_guadalupe.CR2";
 
-    app.load_image(test_image_path);
+    // app.loadImage(test_image_path);
 
     app.run();
     return 0;

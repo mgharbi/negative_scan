@@ -2,6 +2,7 @@
 #include "application.h"
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <sstream>
 
 #include <glog/logging.h>
@@ -89,12 +90,14 @@ void Application::draw() {
     glfwSwapBuffers(m_window);
 }
 
+
 void Application::run() {
     setup();
     while (!mShouldStop && !glfwWindowShouldClose(m_window)) {
         draw();
     }
 }
+
 
 std::string read_file(std::string path)  {
     std::ifstream file(path);
@@ -120,25 +123,25 @@ void checkGLError() {
     }
     switch(err) {
         case GL_INVALID_ENUM:
-            LOG(INFO) << "GL error: invalid enum\n";
+            LOG(ERROR) << "GL error: invalid enum\n";
             break;
         case GL_INVALID_VALUE:
-            LOG(INFO) << "GL error: invalid value\n";
+            LOG(ERROR) << "GL error: invalid value\n";
             break;
         case GL_INVALID_OPERATION:
-            LOG(INFO) << "GL error: invalid operation\n";
+            LOG(ERROR) << "GL error: invalid operation\n";
             break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
-            LOG(INFO) << "GL error: invalid framebuffer operation\n";
+            LOG(ERROR) << "GL error: invalid framebuffer operation\n";
             break;
         case GL_OUT_OF_MEMORY:
-            LOG(INFO) << "GL error: out of memory\n";
+            LOG(ERROR) << "GL error: out of memory\n";
             break;
         case GL_STACK_OVERFLOW:
-            LOG(INFO) << "GL error: stack overflow\n";
+            LOG(ERROR) << "GL error: stack overflow\n";
             break;
         case GL_STACK_UNDERFLOW:
-            LOG(INFO) << "GL error: stack underflow\n";
+            LOG(ERROR) << "GL error: stack underflow\n";
             break;
         default:
             LOG(ERROR) << "OpenGL error" << err << "!\n";
@@ -149,7 +152,7 @@ void checkGLError() {
 GLuint shaderFromFile(std::string filename, GLenum shaderType) {
     std::string src_str = read_file(filename);
     const GLchar* src = src_str.c_str();
-    LOG(INFO) << "shader source " << src  << "\n";
+    // LOG(INFO) << "shader source " << src  << "\n";
 
     GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, (const GLchar**) &src, NULL);
@@ -196,6 +199,6 @@ GLuint createGLProgram(GLuint vertex_shader, GLuint fragment_shader) {
 
 
     }
-    LOG(INFO) << "Created program " << program << "\n";
+    // LOG(INFO) << "Created program " << program << "\n";
     return program;
 }

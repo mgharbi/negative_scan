@@ -10,7 +10,6 @@ class InvertNegativeGenerator : public Generator<InvertNegativeGenerator> {
 public:
     GeneratorParam<bool> bw{"bw", false};
     Input<Buffer<uint16_t>> input{"data", 3};
-    Input<Buffer<float>> camera_rgb{"camera_rgb", 2};
     Input<Buffer<float>> gamma{"gamma", 1};
     Input<Buffer<float>> wp{"wp", 1};
     Input<Buffer<float>> bp{"bp", 1};

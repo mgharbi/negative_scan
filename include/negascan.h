@@ -41,8 +41,17 @@ protected:
         "ektar100",
     };
 
+    // OpenGL data
     ImVec4 mBackgroundColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    GLuint mVAO;
-    GLuint mTexture;
-    GLuint mProgram;
+    GLuint mVAO = 0;
+    GLuint mPreviewTexture = 0;
+    GLuint mOutputTexture = 0;
+    GLuint mProgram = 0;
+    GLuint mFBO = 0;
+
+    // Viewport
+    float mRotation = 0.0f;
+    ImVec2 mTranslation;
+    float mScale = 1.0f;
+    float mAspectRatio = 1.0f;
 };

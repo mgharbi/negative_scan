@@ -20,8 +20,8 @@ Image::Image(int w, int h) : mBuffer(3, w, h)
 
 
 std::shared_ptr<Image> Image::getPreview(int preview_size) {
-  int w = mBuffer.extent(1);
-  int h = mBuffer.extent(2);
+  int w = width();
+  int h = height();
   float aspect = ((float) w) / h;
   int preview_w = 0, preview_h = 0;
   if ( w > h ) {

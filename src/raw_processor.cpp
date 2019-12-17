@@ -18,7 +18,7 @@ RawProcessor::RawProcessor() {
 
 std::shared_ptr<Image> RawProcessor::load(std::string filename) {
   if(!filename.c_str()) {
-    LOG(INFO) << "Filename is empty: " << filename;
+    LOG(WARNING) << "Filename is empty: " << filename;
     return nullptr;
   }
 
@@ -26,7 +26,7 @@ std::shared_ptr<Image> RawProcessor::load(std::string filename) {
   memset(camera_rgb, 0.0f, 3*4*sizeof(float));
 
   // TODO: remove, quarter res, no demosaicking
-  // iProcessor.imgdata.params.half_size = true;
+  iProcessor.imgdata.params.half_size = true;
 
   // Linear image with minimal processing
   iProcessor.imgdata.params.gamm[0] = 1.0;  // linear
@@ -41,7 +41,7 @@ std::shared_ptr<Image> RawProcessor::load(std::string filename) {
 
   timer.reset();
   if (int open_err = iProcessor.open_file(filename.c_str()) != LIBRAW_SUCCESS) {
-    LOG(INFO) << "Error loading" << LibRaw::strerror(open_err);
+    LOG(ERROR) << "Error loading" << LibRaw::strerror(open_err);
   }
 
   // for (int i = 0; i < 4; ++i) {
@@ -58,11 +58,11 @@ std::shared_ptr<Image> RawProcessor::load(std::string filename) {
 
   // TODO(mgharbi): dcraw error checking
   if (int unpack_err = iProcessor.unpack() != LIBRAW_SUCCESS) { 
-    LOG(INFO) << "Unpacking errored" << LibRaw::strerror(unpack_err);
+    LOG(ERROR) << "Unpacking errored" << LibRaw::strerror(unpack_err);
   }
 
   if (int process_err = iProcessor.dcraw_process() != LIBRAW_SUCCESS) {
-    LOG(INFO) << "Raw2Image errored" << LibRaw::strerror(process_err);
+    LOG(ERROR) << "Raw2Image errored" << LibRaw::strerror(process_err);
   }
 
   memcpy(camera_rgb, iProcessor.imgdata.color.rgb_cam, 3*4*sizeof(float));
@@ -181,9 +181,9 @@ std::shared_ptr<Image> RawProcessor::load(std::string filename) {
 int libraw_progress_handler(void *callback_data,enum LibRaw_progress stage, int
     iteration, int expected) {
   Timer* timer = static_cast<Timer*>(callback_data);
-  LOG(INFO) << "LibRAW stage:" << LibRaw::strprogress(stage)
-           << (iteration+1) << " of " << expected
-           << timer->elapsed() << " ms" ;
+  // LOG(INFO) << "LibRAW stage:" << LibRaw::strprogress(stage)
+  //          << (iteration+1) << " of " << expected
+  //          << timer->elapsed() << " ms" ;
   timer->reset();
   return 0;
 }

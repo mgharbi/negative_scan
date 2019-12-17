@@ -1,4 +1,3 @@
-- Bidirectional linked slider-value
 - Histograms
   - realtime histograms
   - RGB with index
@@ -7,7 +6,6 @@
 - tonecurve
 - data structure
 - Add toolbar: 
-  - rotate left/right
   - wp pipette
   - white-balance pipette
   - crop
@@ -15,4 +13,4 @@
   - multiple images
 - perf. and texture size for image display
 - Save state / presets
-- halide algorithm with gl target
+- halide algorithms with gl target

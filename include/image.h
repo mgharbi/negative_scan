@@ -13,7 +13,9 @@ public:
     Image(int w, int h);
     virtual ~Image ();
     std::shared_ptr<Image> getPreview(int preview_size);
-    // void getHistograms(int nbins);
+
+    int width() { return mBuffer.extent(1); }
+    int height() { return mBuffer.extent(2); }
 
     uint16_t* data() { return mBuffer.data(); }
     Halide::Runtime::Buffer<uint16_t> & buffer() { return mBuffer; };

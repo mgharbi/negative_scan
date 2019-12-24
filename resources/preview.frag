@@ -12,7 +12,7 @@ uniform bool grayscale;
 uniform bool invert;
 
 void main() {
-  float eps = 1.0 / 65535.0;
+  // float eps = 1.0 / 65535.0;
 
   vec3 negative = texture2D(texture, texcoord).xyz;
   negative = max(negative, 0);

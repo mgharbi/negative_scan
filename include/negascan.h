@@ -24,6 +24,11 @@ protected:
     virtual void ui();
     virtual void setup();
 
+    void updateTexture();
+    void updatePreview();
+
+    void mouseIO();
+
     RawProcessor mProcessor;
 
     std::shared_ptr<Image> mCurrentImage;

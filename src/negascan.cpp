@@ -3,6 +3,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include "invert_negative.h"
+#include "invert_negative_bw.h"
+
 #include "imgui.h"
 #include "negascan.h"
 
@@ -30,18 +33,12 @@ Negascan::~Negascan()
 
 void Negascan::loadImage(std::string path) {
     LOG(INFO) << "Loading image";
+
     if (mCurrentImage) {
         mCurrentImage.reset();
     }
 
     mCurrentImage = mProcessor.load(path);
-
-    if (mPreviewTexture) {
-        LOG(INFO) << "deleting texture";
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glDeleteTextures(1, &mPreviewTexture);
-        mPreviewTexture = 0;
-    }
 
     if (mCurrentImage) {
         mCurrentPreview = mCurrentImage->getPreview(512);
@@ -49,17 +46,74 @@ void Negascan::loadImage(std::string path) {
 
         mAspectRatio = ((float) mCurrentPreview->width()) /  mCurrentPreview->height();
 
+        if (mPreviewTexture) {
+            LOG(INFO) << "deleting texture: " << mPreviewTexture;
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glDeleteTextures(1, &mPreviewTexture);
+            mPreviewTexture = 0;
+        }
+
         glGenTextures(1, &mPreviewTexture);
         glBindTexture(GL_TEXTURE_2D, mPreviewTexture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+        LOG(INFO) << "new texture " << mPreviewTexture << "size " << mCurrentPreview->width() << "x" << mCurrentPreview->height();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mCurrentPreview->width(),
                 mCurrentPreview->height(), 0, GL_RGB, GL_UNSIGNED_SHORT, mCurrentPreview->data());
         glBindTexture(GL_TEXTURE_2D, mPreviewTexture);
         checkGLError();
         LOG(INFO) << "changed texture";
+        // updateTexture();
     }
+}
+
+
+void Negascan::updateTexture() {
+    glGenTextures(1, &mPreviewTexture);
+    glBindTexture(GL_TEXTURE_2D, mPreviewTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mCurrentPreview->width(),
+            mCurrentPreview->height(), 0, GL_RGB, GL_UNSIGNED_SHORT, mCurrentPreview->data());
+    glBindTexture(GL_TEXTURE_2D, mPreviewTexture);
+    checkGLError();
+}
+
+
+void Negascan::updatePreview() {
+    // LOG(INFO) << "Updating preview";
+    // // mCurrentPreview = mCurrentImage->getPreview(512);
+    // // mAspectRatio = ((float) mCurrentPreview->width()) /  mCurrentPreview->height();
+    // // int width = currentImage->dim(1).extent();
+    // //   int height = currentImage->dim(2).extent();
+    // // Buffer<uint16_t> processed(3, width, height);
+    // std::shared_ptr<Image> processed = std::make_shared<Image>(mCurrentPreview->width(), mCurrentPreview->height());
+    // if(mImageSettings.grayscale) {
+    //     LOG(INFO) << "gray processing";
+    //     invert_negative_bw(
+    //             mCurrentPreview->buffer(),
+    //             Halide::Runtime::Buffer<float>(mImageSettings.gamma.data(), 3),
+    //             Halide::Runtime::Buffer<float>(mImageSettings.wp.data(), 3),
+    //             Halide::Runtime::Buffer<float>(mImageSettings.bp.data(), 3),
+    //             mImageSettings.exposure,
+    //             mImageSettings.output_gamma,
+    //             processed->buffer());
+    // } else {
+    //     invert_negative(
+    //             mCurrentPreview->buffer(),
+    //             Halide::Runtime::Buffer<float>(mImageSettings.gamma.data(), 3),
+    //             Halide::Runtime::Buffer<float>(mImageSettings.wp.data(), 3),
+    //             Halide::Runtime::Buffer<float>(mImageSettings.bp.data(), 3),
+    //             mImageSettings.exposure,
+    //             mImageSettings.output_gamma,
+    //             processed->buffer());
+    // }
+    // // mCurrentPreview = processed;
+    // // updateTexture();
+    // LOG(INFO) << "recomputing histograms";
+    // mHistograms = Histograms(*processed, mHistogramBins);
 }
 
 
@@ -110,6 +164,7 @@ void Negascan::render(double currentTime)
 
     glUniformMatrix4fv(glGetUniformLocation(mProgram, "xform"), 1, false,
             &xform[0][0]);
+
     glUniform1i(glGetUniformLocation(mProgram, "grayscale"),
             mImageSettings.grayscale);
     glUniform1i(glGetUniformLocation(mProgram, "invert"),
@@ -178,6 +233,11 @@ void Negascan::ui()
 
     ImGui::SliderFloat("exposure", &mImageSettings.exposure, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("output gamma", &mImageSettings.output_gamma, 1.0f, 3.0f, "%.1f");
+
+    // if (ImGui::Button("Process")) {
+    //     updatePreview();
+    // }
+
     ImGui::End();
 
     ImGui::Begin("View");
@@ -194,19 +254,39 @@ void Negascan::ui()
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f /
             ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-    if (ImGui::IsMouseDragging()) {
+    mouseIO();
+
+
+    // // Custom drawing
+    // ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    // const ImVec2 p = ImGui::GetCursorScreenPos();
+    // float x = p.x + 4.0f, y = p.y + 4.0f;
+    // static ImVec4 colf = ImVec4(1.0f, 1.0f, 0.4f, 1.0f);
+    // const ImU32 col = ImColor(colf);
+    // float th = 1.0f;
+    // float sz = 36.0f;
+    // draw_list->AddCircle(ImVec2(x + sz*0.5f, y + sz*0.5f), sz*0.5f, col, 20, th);
+
+
+    ImGui::End();
+}
+
+
+void Negascan::mouseIO() {
+    // Translate viewport
+    bool onWindow = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
+    bool onItem = ImGui::IsWindowFocused(ImGuiHoveredFlags_AnyWindow);
+    if (!onWindow && !onItem && ImGui::IsMouseDragging()) {
         ImVec2 drag = ImGui::GetMouseDragDelta();
         ImGui::ResetMouseDragDelta();
         mTranslation.x += drag.x;
         mTranslation.y += drag.y;
     }
 
-    // Update zoom if needed
+    // Update zoom
     float scroll = ImGui::GetIO().MouseWheel;
     mScale *= glm::exp(0.01*scroll);
-    // LOG(INFO) << "scroll " << scroll;
 
-    ImGui::End();
 }
 
 
@@ -248,10 +328,8 @@ void Negascan::setup()
 
     checkGLError();
 
-
     // GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     // glDrawBuffers(1, DrawBuffers);
-
 
     glDeleteShader(vs);
     glDeleteShader(fs);
